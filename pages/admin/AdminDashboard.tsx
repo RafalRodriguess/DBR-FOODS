@@ -32,6 +32,7 @@ import {
   produtosMock,
   servicosMock,
 } from './mock/data';
+import logoImage from '../../Layer_1-1.png';
 
 const DashboardCards = ({
   contatos,
@@ -178,7 +179,7 @@ const Sidebar = ({ open, close }: { open: boolean; close: () => void }) => {
         } lg:translate-x-0`}
       >
         <div className="flex items-center justify-between mb-8">
-          <img src="/Layer_1-1.png" alt="DBR Foods" className="h-8 w-auto brightness-0 invert" />
+          <img src={logoImage} alt="DBR Foods" className="h-8 w-auto brightness-0 invert" />
           <button className="lg:hidden text-white/70 hover:text-white" onClick={close} aria-label="Fechar">
             <X size={20} />
           </button>

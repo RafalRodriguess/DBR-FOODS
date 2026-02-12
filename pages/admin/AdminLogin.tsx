@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '../../App';
+import logoImage from '../../Layer_1-1.png';
 
 const AdminLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,7 @@ const AdminLogin: React.FC = () => {
       <div className="w-full max-w-md relative z-10 animate-fadeIn">
         <div className="bg-white border border-gray-100 rounded-[2rem] p-8 md:p-10 shadow-2xl">
           <div className="text-center mb-8">
-            <img src="/Layer_1-1.png" alt="DBR Foods" className="h-8 w-auto mx-auto mb-4" />
+            <img src={logoImage} alt="DBR Foods" className="h-8 w-auto mx-auto mb-4" />
           </div>
 
           <form className="space-y-5" onSubmit={handleLogin}>

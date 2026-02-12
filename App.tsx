@@ -15,6 +15,7 @@ import FAQ from './pages/FAQ.tsx';
 import Contact from './pages/Contact.tsx';
 import Blog from './pages/Blog.tsx';
 import BlogPost from './pages/BlogPost.tsx';
+import logoImage from './Layer_1-1.png';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin.tsx';
@@ -294,7 +295,7 @@ const Navbar = () => {
         <div className={`flex items-center justify-between transition-all duration-500 rounded-2xl pl-8 pr-12 md:pr-14 ${scrolled ? 'glass-nav py-4 shadow-xl border border-white/20' : 'bg-transparent py-3'}`}>
           <Link to="/" className="flex items-center group">
             <img
-              src="/Layer_1-1.png"
+              src={logoImage}
               alt="DBR Foods"
               className={`h-8 md:h-10 w-auto transition-all ${useLightNavText ? 'brightness-0 invert drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]' : ''}`}
             />
@@ -370,7 +371,7 @@ const SiteFooter = () => {
 
         <div className="py-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 border-b border-white/10">
           <div className="space-y-4">
-            <img src="/Layer_1-1.png" alt="DBR Foods" className="h-10 w-auto brightness-0 invert" />
+            <img src={logoImage} alt="DBR Foods" className="h-10 w-auto brightness-0 invert" />
             <p className="text-white/60 text-sm leading-relaxed max-w-sm">{t.footer.desc}</p>
           </div>
 
@@ -430,7 +431,7 @@ const AuthContext = createContext<{ isAuthenticated: boolean, login: () => void,
 export const useAuth = () => useContext(AuthContext);
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>('pt');
+  const [lang, setLang] = useState<Language>('en');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const login = () => setIsAuthenticated(true);
   const logout = () => setIsAuthenticated(false);
