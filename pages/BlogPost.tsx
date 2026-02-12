@@ -6,8 +6,13 @@ import { useLang } from '../App';
 
 const BlogPost: React.FC = () => {
   const { id } = useParams();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [scrollProgress, setScrollProgress] = useState(0);
+  const postLabels = {
+    share: lang === 'pt' ? 'Compartilhar análise' : lang === 'es' ? 'Compartir análisis' : 'Share Analysis',
+    needData: lang === 'pt' ? 'Precisa de dados técnicos?' : lang === 'es' ? '¿Necesitas datos técnicos?' : 'Need technical data?',
+    requestSpecs: lang === 'pt' ? 'Solicitar especificações' : lang === 'es' ? 'Solicitar especificaciones' : 'Request Specs',
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -124,7 +129,7 @@ const BlogPost: React.FC = () => {
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-32 space-y-10 md:space-y-12">
                <div className="space-y-6">
-                 <h5 className="text-[10px] font-black tracking-[0.3em] text-green-950 uppercase border-b border-gray-100 pb-4">Share Analysis</h5>
+                 <h5 className="text-[10px] font-black tracking-[0.3em] text-green-950 uppercase border-b border-gray-100 pb-4">{postLabels.share}</h5>
                  <div className="flex flex-row lg:flex-col flex-wrap gap-4">
                    {[
                      { name: 'LinkedIn', icon: Linkedin, color: 'hover:bg-[#0077b5]' },
@@ -140,9 +145,9 @@ const BlogPost: React.FC = () => {
                </div>
 
                <div className="p-8 md:p-10 bg-green-950 rounded-[2rem] md:rounded-[3rem] text-white shadow-xl">
-                  <h5 className="text-xl md:text-2xl font-black tracking-tighter mb-6">Need technical data?</h5>
+                  <h5 className="text-xl md:text-2xl font-black tracking-tighter mb-6">{postLabels.needData}</h5>
                   <Link to="/contact" className="inline-block w-full text-center bg-gold text-white px-6 md:px-8 py-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white hover:text-green-950 transition-all">
-                    Request Specs
+                    {postLabels.requestSpecs}
                   </Link>
                </div>
             </div>

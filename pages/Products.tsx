@@ -1,40 +1,121 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, ArrowUpRight } from 'lucide-react';
+import { Search, ArrowUpRight, Sparkles, ShieldCheck, Truck, SlidersHorizontal } from 'lucide-react';
 import { useLang } from '../App';
 
 const Products: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { t } = useLang();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeBenefit, setActiveBenefit] = useState('all');
+  const { t, lang } = useLang();
 
   const products = [
-    { name: 'Black Chia Seeds', type: 'Organic / Conv.', purity: '>99.95%', origin: 'Paraguay', img: 'https://images.unsplash.com/photo-1596711910609-0d12759e0a0d?auto=format&fit=crop&w=600&q=80' },
-    { name: 'White Quinoa', type: 'Conventional', purity: '>99.90%', origin: 'Spain', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80' },
-    { name: 'Psyllium Husk', type: 'Organic / Conv.', purity: '95% to 99%', origin: 'India', img: 'https://images.unsplash.com/photo-1596167447475-474070776569?auto=format&fit=crop&w=600&q=80' },
-    { name: 'Ashwagandha Root', type: 'Organic / Conv.', purity: '100% Extract', origin: 'India', img: 'https://images.unsplash.com/photo-1563823251941-b9989d1e8d97?auto=format&fit=crop&w=600&q=80' },
-    { name: 'Sesame Seeds', type: 'Conventional', purity: '99%', origin: 'Paraguay', img: 'https://images.unsplash.com/photo-1596167447475-474070776569?auto=format&fit=crop&w=600&q=80' },
-    { name: 'Hemp Seeds', type: 'Dehulled / Protein', purity: 'Various', origin: 'France & China', img: 'https://images.unsplash.com/photo-1597405230245-8f553926955a?auto=format&fit=crop&w=600&q=80' },
+    { name: 'Black Chia Seeds', category: 'Seeds & Grains', benefit: 'Digestao', type: 'Organic / Conv.', purity: '>99.95%', origin: 'Paraguay', img: 'https://images.unsplash.com/photo-1596711910609-0d12759e0a0d?auto=format&fit=crop&w=500&q=80' },
+    { name: 'White Quinoa', category: 'Seeds & Grains', benefit: 'Energia', type: 'Conventional', purity: '>99.90%', origin: 'Spain', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Royal Quinoa', category: 'Seeds & Grains', benefit: 'Proteina', type: 'Organic', purity: '>99.80%', origin: 'Peru', img: 'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Hemp Seeds', category: 'Plant Protein', benefit: 'Proteina', type: 'Dehulled / Protein', purity: 'Various', origin: 'France', img: 'https://images.unsplash.com/photo-1597405230245-8f553926955a?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Pea Protein 80%', category: 'Plant Protein', benefit: 'Proteina', type: 'Organic', purity: '80%', origin: 'Belgium', img: 'https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Rice Protein 80%', category: 'Plant Protein', benefit: 'Proteina', type: 'Organic', purity: '80%', origin: 'China', img: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Ashwagandha Root', category: 'Herbs & Spices', benefit: 'Equilibrio', type: 'Organic / Conv.', purity: '100% Extract', origin: 'India', img: 'https://images.unsplash.com/photo-1563823251941-b9989d1e8d97?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Turmeric Powder', category: 'Herbs & Spices', benefit: 'Imunidade', type: 'Organic', purity: '95%+', origin: 'India', img: 'https://images.unsplash.com/photo-1615485291234-9e2fef8c2f31?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Cinnamon Powder', category: 'Herbs & Spices', benefit: 'Digestao', type: 'Organic', purity: '98%+', origin: 'Sri Lanka', img: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Spirulina Powder', category: 'Algae', benefit: 'Energia', type: 'Organic', purity: '>99.5%', origin: 'India', img: 'https://images.unsplash.com/photo-1553530666-ba11a90fce43?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Chlorella Powder', category: 'Algae', benefit: 'Imunidade', type: 'Organic', purity: '>99.0%', origin: 'China', img: 'https://images.unsplash.com/photo-1614956580079-8f6fef7c0f76?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Barley Grass Powder', category: 'Greens', benefit: 'Detox', type: 'Organic', purity: 'Natural', origin: 'EU', img: 'https://images.unsplash.com/photo-1515543904379-3d757afe72e3?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Wheatgrass Powder', category: 'Greens', benefit: 'Detox', type: 'Organic', purity: 'Natural', origin: 'New Zealand', img: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Acai Berry Powder', category: 'Fruit Powders', benefit: 'Antioxidante', type: 'Organic', purity: 'Freeze Dried', origin: 'Brazil', img: 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Banana Powder', category: 'Fruit Powders', benefit: 'Energia', type: 'Organic', purity: 'Natural', origin: 'Ecuador', img: 'https://images.unsplash.com/photo-1574226516831-e1dff420e37f?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Blueberry Powder', category: 'Fruit Powders', benefit: 'Antioxidante', type: 'Organic', purity: 'Freeze Dried', origin: 'Poland', img: 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Cacao Powder', category: 'Cacao', benefit: 'Energia', type: 'Organic', purity: 'Natural', origin: 'Peru', img: 'https://images.unsplash.com/photo-1611464914464-8b3c3d2f5f61?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Cacao Nibs', category: 'Cacao', benefit: 'Energia', type: 'Organic', purity: 'Natural', origin: 'Peru', img: 'https://images.unsplash.com/photo-1511381939415-e44015466834?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Psyllium Husk', category: 'Fiber', benefit: 'Digestao', type: 'Organic / Conv.', purity: '95% to 99%', origin: 'India', img: 'https://images.unsplash.com/photo-1596167447475-474070776569?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Coconut Sugar', category: 'Coconut', benefit: 'Energia', type: 'Conventional', purity: 'Natural', origin: 'Indonesia', img: 'https://images.unsplash.com/photo-1587735243615-c03f25aaff15?auto=format&fit=crop&w=500&q=80' },
   ];
+
+  const labels = {
+    all: lang === 'pt' ? 'Todos' : lang === 'es' ? 'Todos' : 'All',
+    catalogTitle: lang === 'pt' ? 'Catalogo completo para trade e atacado' : lang === 'es' ? 'Catalogo completo para comercio mayorista' : 'Complete catalog for trade and wholesale',
+    catalogSub: lang === 'pt' ? 'Filtre por categoria, beneficio e nome do ingrediente para encontrar rapidamente o que voce precisa.' : lang === 'es' ? 'Filtra por categoria, beneficio y nombre del ingrediente para encontrar rapidamente lo que necesitas.' : 'Filter by category, benefit and ingredient name to quickly find what you need.',
+    category: lang === 'pt' ? 'Categoria' : lang === 'es' ? 'Categoria' : 'Category',
+    benefit: lang === 'pt' ? 'Beneficio' : lang === 'es' ? 'Beneficio' : 'Benefit',
+    purity: lang === 'pt' ? 'Pureza' : lang === 'es' ? 'Pureza' : 'Purity',
+    origin: lang === 'pt' ? 'Origem' : lang === 'es' ? 'Origen' : 'Origin',
+    result: lang === 'pt' ? 'resultados encontrados' : lang === 'es' ? 'resultados encontrados' : 'results found',
+    requestQuote: lang === 'pt' ? 'Solicitar cotacao' : lang === 'es' ? 'Solicitar cotizacion' : 'Request quote',
+    clearFilters: lang === 'pt' ? 'Limpar filtros' : lang === 'es' ? 'Limpiar filtros' : 'Clear filters',
+    portfolio: lang === 'pt' ? 'Portfólio premium de superalimentos' : lang === 'es' ? 'Portafolio premium de superalimentos' : 'Premium superfood portfolio',
+    quality: lang === 'pt' ? 'Sourcing orientado por qualidade' : lang === 'es' ? 'Abastecimiento orientado por calidad' : 'Quality-driven sourcing',
+    logistics: lang === 'pt' ? 'Pronto para logística global' : lang === 'es' ? 'Listo para logística global' : 'Ready for global logistics',
+    tradeSelection: lang === 'pt' ? 'Seleção para trade' : lang === 'es' ? 'Selección para trade' : 'Trade Selection',
+    filtersTitle: lang === 'pt' ? 'Filtros' : lang === 'es' ? 'Filtros' : 'Filters',
+    tradeBadge: 'Trade & Wholesale',
+    tradeTitle: lang === 'pt' ? 'Pronto para comprar com confiança?' : lang === 'es' ? '¿Listo para comprar con confianza?' : 'Ready to source with confidence?',
+    tradeText:
+      lang === 'pt'
+        ? 'Fale com nosso time para disponibilidade, especificações técnicas e condições comerciais por volume.'
+        : lang === 'es'
+          ? 'Habla con nuestro equipo para disponibilidad, especificaciones técnicas y condiciones comerciales por volumen.'
+          : 'Talk to our team for availability, technical specs and volume-based commercial terms.',
+    noResults: lang === 'pt' ? 'Nenhum produto encontrado para esse filtro.' : lang === 'es' ? 'No se encontraron productos para este filtro.' : 'No products found for this filter.',
+    highlights: lang === 'pt' ? ['Origem rastreável', 'Padrão premium', 'Entrega global'] : lang === 'es' ? ['Origen trazable', 'Estándar premium', 'Entrega global'] : ['Traceable origin', 'Premium standard', 'Global delivery']
+  };
+
+  const categories = useMemo(() => [labels.all, ...Array.from(new Set(products.map((p) => p.category)))], [labels.all]);
+  const benefits = useMemo(() => [labels.all, ...Array.from(new Set(products.map((p) => p.benefit)))], [labels.all]);
+
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.benefit.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+    const matchesBenefit = activeBenefit === 'all' || p.benefit === activeBenefit;
+    return matchesSearch && matchesCategory && matchesBenefit;
+  });
+
+  const handleCategoryClick = (category: string) => {
+    setActiveCategory(category === labels.all ? 'all' : category);
+  };
+  const handleBenefitClick = (benefit: string) => {
+    setActiveBenefit(benefit === labels.all ? 'all' : benefit);
+  };
+
+  const resetFilters = () => {
+    setActiveCategory('all');
+    setActiveBenefit('all');
+    setSearchTerm('');
+  };
 
   return (
     <div className="bg-white min-h-screen">
-      <section className="pt-32 md:pt-48 pb-16 md:pb-20 bg-gray-50 border-b border-gray-100">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
+      <section className="pt-32 md:pt-48 pb-16 md:pb-20 bg-green-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
             <div className="max-w-2xl">
               <span className="text-gold font-black tracking-[0.3em] text-[10px] mb-4 block uppercase">{t.products.hero.badge}</span>
-              <h1 className="text-4xl sm:text-5xl md:text-8xl font-black text-green-950 tracking-tighter leading-none mb-6">{t.products.hero.title}</h1>
-              <p className="text-gray-500 font-medium max-w-md text-sm md:text-base">{t.products.hero.sub}</p>
+              <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-none mb-6">{t.products.hero.title}</h1>
+              <p className="text-white/75 font-medium max-w-xl text-sm md:text-base">{labels.catalogSub}</p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                {labels.highlights.map((highlight) => (
+                  <span key={highlight} className="px-4 py-2 rounded-full border border-white/20 text-[10px] font-black tracking-widest uppercase text-white/80">
+                    {highlight}
+                  </span>
+                ))}
+              </div>
             </div>
             
             <div className="w-full lg:w-auto">
-               <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-gold transition-colors" size={20} />
+               <div className="relative group w-full md:w-80">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-gold transition-colors" size={20} />
                   <input 
                     type="text" 
                     placeholder={t.products.searchPlaceholder || "Search..."} 
-                    className="pl-12 pr-6 py-4 bg-white border border-gray-200 rounded-2xl w-full md:w-80 outline-none focus:border-gold transition-all shadow-sm text-sm"
+                    value={searchTerm}
+                    className="pl-12 pr-6 py-4 bg-white/10 border border-white/20 rounded-2xl w-full outline-none focus:border-gold focus:bg-white/15 transition-all text-sm text-white placeholder:text-white/50"
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                </div>
@@ -43,51 +124,163 @@ const Products: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-16 md:py-24">
+      <section className="py-10 bg-gray-50 border-b border-gray-100">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-16">
-            {products
-              .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-              .map((p, idx) => (
-              <div key={idx} className="group cursor-pointer">
-                <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[4rem] mb-6 md:mb-10 shadow-xl md:shadow-2xl transition-bezier h-[350px] md:h-[450px]">
-                  <img 
-                    src={p.img} 
-                    alt={p.name} 
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-green-950/90 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-all"></div>
-                  
-                  <div className="absolute bottom-8 md:bottom-12 left-8 md:left-12 right-8 md:right-12 text-white">
-                    <span className="text-[9px] md:text-[10px] font-black tracking-[0.3em] text-gold uppercase mb-2 block">{p.type}</span>
-                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter uppercase leading-tight mb-4 md:mb-6">{p.name}</h3>
-                    <div className="pt-4 md:pt-6 border-t border-white/10 flex justify-between items-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all translate-y-0 sm:translate-y-4 sm:group-hover:translate-y-0">
-                       <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest">
-                         <p className="text-white/60">Purity</p>
-                         <p className="text-white">{p.purity}</p>
-                       </div>
-                       <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-right">
-                         <p className="text-white/60">Origin</p>
-                         <p className="text-white">{p.origin}</p>
-                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute top-6 right-6 md:top-8 md:right-8 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all -rotate-45 group-hover:rotate-0">
-                    <ArrowUpRight size={20} className="md:size-[24px]" />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
+              <Sparkles size={18} className="text-gold" />
+              <p className="text-[11px] font-black tracking-wider uppercase text-green-950">{labels.portfolio}</p>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
+              <ShieldCheck size={18} className="text-gold" />
+              <p className="text-[11px] font-black tracking-wider uppercase text-green-950">{labels.quality}</p>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
+              <Truck size={18} className="text-gold" />
+              <p className="text-[11px] font-black tracking-wider uppercase text-green-950">{labels.logistics}</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="py-20 md:py-32 bg-gray-50">
-        <div className="container mx-auto px-6 text-center">
-           <Link to="/contact" className="inline-block bg-green-950 text-white px-10 md:px-12 py-4 md:py-5 rounded-full font-black text-[10px] md:text-xs tracking-widest hover:bg-gold transition-all shadow-xl uppercase">
-             {t.products.cta}
-           </Link>
+      <section className="py-14 md:py-16 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <span className="text-gold font-black tracking-[0.25em] text-[10px] uppercase mb-2 block">{labels.tradeSelection}</span>
+              <h2 className="text-3xl md:text-5xl font-black text-green-950 tracking-tighter">{labels.catalogTitle}</h2>
+            </div>
+            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">
+              {filteredProducts.length} {labels.result}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
+            <aside className="lg:col-span-3">
+              <div className="lg:sticky lg:top-28 bg-gray-50 border border-gray-100 rounded-[2rem] p-6 md:p-7">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="flex items-center gap-2 text-green-950 font-black text-sm uppercase tracking-widest">
+                    <SlidersHorizontal size={16} className="text-gold" />
+                    {labels.filtersTitle}
+                  </h3>
+                  <button onClick={resetFilters} className="text-[10px] font-black tracking-widest uppercase text-gray-400 hover:text-gold transition-colors">
+                    {labels.clearFilters}
+                  </button>
+                </div>
+
+                <div className="mb-7">
+                  <p className="text-[10px] font-black tracking-widest uppercase text-gray-400 mb-3">{labels.category}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((category) => {
+                      const isActive = (category === labels.all && activeCategory === 'all') || category === activeCategory;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => handleCategoryClick(category)}
+                          className={`px-3 py-2 rounded-full text-[10px] font-black tracking-wide uppercase border transition-all ${
+                            isActive ? 'bg-green-950 text-white border-green-950' : 'bg-white text-gray-500 border-gray-200 hover:border-gold hover:text-gold'
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-black tracking-widest uppercase text-gray-400 mb-3">{labels.benefit}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {benefits.map((benefit) => {
+                      const isActive = (benefit === labels.all && activeBenefit === 'all') || benefit === activeBenefit;
+                      return (
+                        <button
+                          key={benefit}
+                          onClick={() => handleBenefitClick(benefit)}
+                          className={`px-3 py-2 rounded-full text-[10px] font-black tracking-wide uppercase border transition-all ${
+                            isActive ? 'bg-gold text-white border-gold' : 'bg-white text-gray-500 border-gray-200 hover:border-gold hover:text-gold'
+                          }`}
+                        >
+                          {benefit}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <div className="lg:col-span-9">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
+                {filteredProducts.map((p, idx) => (
+                  <article key={idx} className="bg-white border border-gray-100 rounded-[1.75rem] p-5 md:p-6 hover:shadow-xl transition-all group">
+                    <div className="relative h-40 md:h-44 rounded-2xl overflow-hidden mb-5">
+                      <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-green-950/40 to-transparent" />
+                      <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 text-[8px] font-black tracking-widest uppercase text-green-950">
+                        {p.category}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <h3 className="text-lg font-black text-green-950 tracking-tight leading-snug">{p.name}</h3>
+                      <ArrowUpRight size={16} className="text-gray-300 group-hover:text-gold transition-colors shrink-0 mt-1" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{labels.origin}</p>
+                        <p className="text-xs font-bold text-green-950">{p.origin}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{labels.purity}</p>
+                        <p className="text-xs font-bold text-green-950">{p.purity}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div>
+                        <p className="text-[9px] font-black tracking-widest uppercase text-gray-400 mb-1">{labels.benefit}</p>
+                        <p className="text-xs font-bold text-gold uppercase">{p.benefit}</p>
+                      </div>
+                      <Link to="/contact" className="text-[10px] font-black tracking-widest uppercase text-green-950 hover:text-gold transition-colors">
+                        {labels.requestQuote}
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {filteredProducts.length === 0 && (
+                <div className="py-16 text-center border border-dashed border-gray-200 rounded-2xl">
+                  <p className="text-gray-400 font-black tracking-wider uppercase text-sm">{labels.noResults}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 md:py-28 bg-gray-50">
+        <div className="container mx-auto px-6">
+          <div className="bg-green-950 text-white rounded-[2.5rem] md:rounded-[4rem] p-10 md:p-14 lg:p-16 relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-44 h-44 md:w-64 md:h-64 rounded-full bg-gold/20 blur-3xl" />
+            <div className="relative z-10 max-w-3xl">
+              <span className="text-gold font-black tracking-[0.3em] text-[10px] mb-4 block uppercase">{labels.tradeBadge}</span>
+              <h3 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight mb-4 md:mb-6">
+                {labels.tradeTitle}
+              </h3>
+              <p className="text-white/70 font-medium text-sm md:text-base mb-8">{labels.tradeText}</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/contact" className="inline-block bg-white text-green-950 px-10 md:px-12 py-4 md:py-5 rounded-full font-black text-[10px] md:text-xs tracking-widest hover:bg-gold hover:text-white transition-all shadow-xl uppercase text-center">
+                  {t.products.cta}
+                </Link>
+                <Link to="/services" className="inline-block border border-white/30 text-white px-10 md:px-12 py-4 md:py-5 rounded-full font-black text-[10px] md:text-xs tracking-widest hover:bg-white/10 transition-all uppercase text-center">
+                  {t.common.learnMore}
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

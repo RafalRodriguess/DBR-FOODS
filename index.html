@@ -11,9 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --dbr-green-dark: #002b11;
-            --dbr-green-medium: #1a4a2b;
-            --dbr-gold: #c5a059;
+            --dbr-green-dark: #27864D;
+            --dbr-green-medium: #27864D;
+            --dbr-gold: #DC9C01;
         }
         body {
             font-family: 'Montserrat', sans-serif;
@@ -22,7 +22,7 @@
             margin: 0;
         }
         .bg-hero-pattern {
-            background: linear-gradient(to right, rgba(0, 43, 17, 0.85), rgba(0, 43, 17, 0.4)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background: linear-gradient(to right, rgba(18, 72, 43, 0.92), rgba(22, 95, 55, 0.60)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
         }
@@ -41,7 +41,7 @@
         
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: var(--dbr-green-medium); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--dbr-green-medium) 0%, var(--dbr-gold) 100%); border-radius: 10px; }
         
         @keyframes float {
             0% { transform: translateY(0px); }
@@ -71,5 +71,6 @@
 </head>
 <body class="bg-white text-gray-900 selection:bg-green-100 selection:text-green-900">
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

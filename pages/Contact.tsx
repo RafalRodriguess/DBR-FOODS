@@ -8,16 +8,22 @@ const Contact: React.FC = () => {
 
   return (
     <div className="bg-white">
-      <section className="pt-32 md:pt-48 pb-16 md:pb-24 bg-gray-50">
-        <div className="container mx-auto px-6">
+      <section className="pt-32 md:pt-48 pb-16 md:pb-24 bg-green-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
+        <div className="container mx-auto px-6 relative z-10">
           <span className="text-gold font-black tracking-[0.3em] text-[10px] mb-4 block uppercase">{t.contact.hero.badge}</span>
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-green-950 tracking-tighter leading-[1.1] mb-8 md:mb-12">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter leading-[1.1] mb-6 md:mb-8">
             {t.contact.hero.title}
           </h1>
+          <p className="max-w-2xl text-white/70 text-sm md:text-lg font-medium">
+            Compartilhe seu desafio e retornamos com proposta técnica, logística e comercial alinhada ao seu mercado.
+          </p>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 container mx-auto px-6">
+      <section className="py-16 md:py-24 bg-gray-50">
+        <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 md:gap-16">
           {/* Info Side */}
           <div className="lg:col-span-4 space-y-10 md:space-y-12 order-2 lg:order-1">
@@ -103,6 +109,7 @@ const Contact: React.FC = () => {
               </div>
             </form>
           </div>
+        </div>
         </div>
       </section>
 

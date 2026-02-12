@@ -33,21 +33,32 @@ const FAQ: React.FC = () => {
 
   return (
     <div className="bg-white">
-      <section className="pt-48 pb-24 bg-gray-50">
-        <div className="container mx-auto px-6 text-center">
+      <section className="pt-40 md:pt-48 pb-20 md:pb-24 bg-green-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
+        <div className="container mx-auto px-6 text-center relative z-10">
           <span className="text-gold font-black tracking-[0.3em] text-[10px] mb-4 block uppercase">{t.faq.hero.badge}</span>
-          <h1 className="text-6xl md:text-8xl font-black text-green-950 tracking-tighter leading-none mb-12">
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-none mb-8 md:mb-12">
             {t.faq.hero.title.split(' ')[0]} <br /> {t.faq.hero.title.split(' ').slice(1).join(' ')}
           </h1>
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 opacity-90">
+            {['Organic Focus', 'Global Sourcing', 'Quality First'].map((badge) => (
+              <span key={badge} className="px-4 py-2 rounded-full border border-white/20 text-[10px] font-black tracking-widest uppercase text-white/80">
+                {badge}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="py-32">
+      <section className="py-16 md:py-24 bg-gray-50">
         <div className="container mx-auto px-6 max-w-5xl">
+          <div className="bg-white border border-gray-100 rounded-[2rem] md:rounded-[3rem] shadow-xl p-6 md:p-10">
           <div className="space-y-4">
             {t.faq.items.map((item: any, idx: number) => (
               <FAQItem key={idx} question={`${idx + 1}. ${item.q}`} answer={item.a} />
             ))}
+          </div>
           </div>
           
           <div className="mt-24 p-12 bg-green-950 rounded-[3rem] text-white text-center relative overflow-hidden">
