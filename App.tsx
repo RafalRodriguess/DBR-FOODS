@@ -292,7 +292,7 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled ? 'py-3' : 'py-6'}`}>
       <div className={`container mx-auto px-6 transition-all duration-500 ${scrolled ? 'max-w-7xl' : 'max-w-[84rem]'}`}>
-        <div className={`flex items-center justify-between transition-all duration-500 rounded-2xl pl-8 pr-12 md:pr-14 ${scrolled ? 'glass-nav py-4 shadow-xl border border-white/20' : 'bg-transparent py-3'}`}>
+        <div className={`flex items-center justify-between transition-all duration-500 rounded-2xl pr-12 md:pr-14 ${scrolled ? 'glass-nav py-4 shadow-xl border border-white/20' : 'bg-transparent py-3'}`}>
           <Link to="/" className="flex items-center group">
             <img
               src={logoImage}
