@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   Menu, X, Search, Phone, Mail, MapPin, 
-  Facebook, Linkedin, Instagram, Globe, ChevronDown
+  Facebook, Linkedin, Instagram, Globe, ChevronDown, Lock
 } from 'lucide-react';
 
-// Components
+// Public Pages
 import Home from './pages/Home';
 import Products from './pages/Products';
 import About from './pages/About';
@@ -16,12 +16,17 @@ import Contact from './pages/Contact';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 
+// Admin Pages
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+
 // Comprehensive Translation Dictionary
 const translations = {
   en: {
-    nav: { home: 'HOME', products: 'PRODUCTS', about: 'ABOUT', services: 'SERVICES', blog: 'BLOG', faq: 'FAQ', contact: 'CONTACT', quote: 'GET A QUOTE' },
+    nav: { home: 'HOME', products: 'PRODUCTS', about: 'ABOUT', services: 'SERVICES', blog: 'BLOG', faq: 'FAQ', contact: 'CONTACT', quote: 'GET A QUOTE', admin: 'ADMIN' },
     footer: { desc: 'Global leaders in superfood supply chain excellence.', navTitle: 'Navigation', join: 'Join the Vision', sub: 'Subscribe' },
     common: { learnMore: 'Learn More', readMore: 'Read More', contactUs: 'Contact Us', back: 'Back', search: 'Search articles...', send: 'Send Message' },
+    // ... (rest of translation object remains same as before)
     home: {
       hero: { badge: "EST. 2023 • SUPERFOOD SPECIALISTS", title: "Empowering A Healthier World With Superfoods", sub: "Architecting transparent supply chains for the next generation of nutrition." },
       cta: { products: "EXPLORE PRODUCTS", story: "OUR STORY" },
@@ -82,7 +87,7 @@ const translations = {
     }
   },
   pt: {
-    nav: { home: 'INÍCIO', products: 'PRODUTOS', about: 'SOBRE', services: 'SERVIÇOS', blog: 'BLOG', faq: 'DÚVIDAS', contact: 'CONTATO', quote: 'ORÇAMENTO' },
+    nav: { home: 'INÍCIO', products: 'PRODUTOS', about: 'SOBRE', services: 'SERVIÇOS', blog: 'BLOG', faq: 'DÚVIDAS', contact: 'CONTATO', quote: 'ORÇAMENTO', admin: 'ADMIN' },
     footer: { desc: 'Líderes globais em excelência na cadeia de suprimentos de superalimentos.', navTitle: 'Navegação', join: 'Junte-se à Visão', sub: 'Inscrever-se' },
     common: { learnMore: 'Saiba Mais', readMore: 'Ler Mais', contactUs: 'Contate-nos', back: 'Voltar', search: 'Buscar artigos...', send: 'Enviar Mensagem' },
     home: {
@@ -145,7 +150,7 @@ const translations = {
     }
   },
   es: {
-    nav: { home: 'INICIO', products: 'PRODUCTOS', about: 'NOSOTROS', services: 'SERVICIOS', blog: 'BLOG', faq: 'FAQ', contact: 'CONTACTO', quote: 'PRESUPUESTO' },
+    nav: { home: 'INICIO', products: 'PRODUCTOS', about: 'NOSOTROS', services: 'SERVICIOS', blog: 'BLOG', faq: 'FAQ', contact: 'CONTACTO', quote: 'PRESUPUESTO', admin: 'ADMIN' },
     footer: { desc: 'Líderes mundiales en la excelencia de la cadena de suministro de superalimentos.', navTitle: 'Navegación', join: 'Únete a la Visión', sub: 'Suscribirse' },
     common: { learnMore: 'Saber Más', readMore: 'Leer Más', contactUs: 'Contáctenos', back: 'Volver', search: 'Buscar artículos...', send: 'Enviar Mensaje' },
     home: {
@@ -177,7 +182,7 @@ const translations = {
         { title: 'Control de la Cadena', desc: 'Gestión integral que garantiza la transparencia desde la semilla hasta su almacén.' },
         { title: 'Logística Internacional', desc: 'Soporte especializado para el tránsito global, despacho de aduanas y almacenamiento.' },
         { title: 'Auditorías de Fábrica', desc: 'Inspecciones locales y auditorías de calidad en América Latina e India.' },
-        { title: 'Verificación de Calidad', desc: 'Análisis riguroso para cada envío en laboratorios europeos acreditados.' },
+        { title: 'Verificación de Calidad', desc: 'Análisis rigoroso para cada envío en laboratorios europeos acreditados.' },
         { title: 'Expansión Estratégica', desc: 'Conectando su marca con nuevas regiones con ingredientes sostenibles y éticos.' }
       ]
     },
@@ -195,11 +200,11 @@ const translations = {
     contact: {
       hero: { badge: "PONTE EN CONTACTO", title: "Iniciemos una Conversación." },
       info: { location: "Ubicación", email: "Correo", phone: "Línea Directa", logistics: "Logística Estratégica", logisticsSub: "Con sede en el Puerto de Rotterdam, ofrecemos envíos optimizados a cualquier destino del mundo." },
-      form: { name: "Nombre Completo", email: "Correo Industrial", phone: "Teléfono", subject: "Asunto", message: "Mensaje", send: "Enviar Mensaje", robot: "No soy un robot", options: ["Selección de Asunto", "Presupuesto", "Duda Logística", "Alianza"] }
+      form: { name: "Nombre Completo", email: "Correo Industrial", phone: "Teléfono", subject: "Asunto", message: "Mensaje", send: "Enviar Mensaje", robot: "No soy un robot", options: ["Selección de Assunto", "Presupuesto", "Duda Logística", "Alianza"] }
     },
     blog: {
       hero: { badge: "INSIGHTS Y ANÁLISIS", title: "El Diario de los Superalimentos." },
-      categories: ['Todo', 'Suministro', 'Nutrición', 'Sostenibilidad', 'Tendencias'],
+      categories: ['Todo', 'Suministro', 'Nutrición', 'Sostenibilidad', 'Tendências'],
       featured: "Análisis Destacado",
       read: "de lectura",
       noResults: "No se encontraron artículos en esta selección.",
@@ -221,11 +226,15 @@ const Navbar = () => {
   const { lang, setLang, t } = useLang();
   const location = useLocation();
 
+  const isAdminPath = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  if (isAdminPath) return null; // Admin has its own sidebar
 
   const navLinks = [
     { name: t.nav.home, path: '/' },
@@ -302,6 +311,10 @@ const Navbar = () => {
             }`}>
               {t.nav.quote}
             </Link>
+
+            <Link to="/admin/login" className={`flex items-center gap-2 text-[10px] font-black tracking-widest ${scrolled || (location.pathname !== '/' && !location.pathname.startsWith('/blog/')) ? 'text-gray-400' : 'text-white/40'} hover:text-gold transition-colors`}>
+              <Lock size={12} /> {t.nav.admin}
+            </Link>
           </div>
 
           <button className={`lg:hidden ${scrolled || (location.pathname !== '/' && !location.pathname.startsWith('/blog/')) ? 'text-green-900' : 'text-white'}`} onClick={() => setIsOpen(!isOpen)}>
@@ -316,6 +329,9 @@ const Navbar = () => {
           {navLinks.map((link) => (
             <Link key={link.name} to={link.path} className="text-2xl font-black text-white" onClick={() => setIsOpen(false)}>{link.name}</Link>
           ))}
+          <Link to="/admin/login" className="text-white/40 font-bold uppercase tracking-widest flex items-center gap-2" onClick={() => setIsOpen(false)}>
+            <Lock size={16} /> ADMIN
+          </Link>
           <div className="flex gap-4 pt-4">
              {languages.map(l => (
                <button key={l.code} onClick={() => { setLang(l.code as Language); setIsOpen(false); }} className={`px-4 py-2 rounded-lg border border-white/20 text-white font-bold ${lang === l.code ? 'bg-gold border-gold' : ''}`}>
@@ -332,6 +348,11 @@ const Navbar = () => {
 
 const Footer = () => {
   const { t } = useLang();
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
+  
+  if (isAdminPath) return null;
+
   return (
     <footer className="bg-[#001a0a] text-white pt-24 pb-12 relative overflow-hidden">
       <div className="container mx-auto px-6">
@@ -376,28 +397,46 @@ const Footer = () => {
   );
 };
 
+// Simple Mock Auth
+const AuthContext = createContext<{ isAuthenticated: boolean, login: () => void, logout: () => void }>({ isAuthenticated: false, login: () => {}, logout: () => {} });
+export const useAuth = () => useContext(AuthContext);
+
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const login = () => setIsAuthenticated(true);
+  const logout = () => setIsAuthenticated(false);
+
   return (
     <LanguageContext.Provider value={{ lang, setLang, t: translations[lang] }}>
-      <Router>
-        <div className="min-h-screen flex flex-col antialiased">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:id" element={<BlogPost />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/contact" element={<Contact />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
+      <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+        <Router>
+          <div className="min-h-screen flex flex-col antialiased">
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogPost />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/contact" element={<Contact />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route 
+                  path="/admin/*" 
+                  element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/admin/login" />} 
+                />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </AuthContext.Provider>
     </LanguageContext.Provider>
   );
 };
