@@ -176,6 +176,7 @@ const BlogArticleForm: React.FC<{ mode: 'create' | 'edit' }> = ({ mode }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 md:p-8 max-w-4xl space-y-8">
+        <div className="space-y-8">
         {error && (
           <AlertMessage type="error" message={error} onDismiss={() => setError('')} />
         )}
@@ -377,6 +378,7 @@ const BlogArticleForm: React.FC<{ mode: 'create' | 'edit' }> = ({ mode }) => {
           >
             {loading ? 'Salvando...' : form.status === 'published' ? 'Publicar' : 'Salvar'} artigo
           </button>
+        </div>
         </div>
       </form>
     </section>

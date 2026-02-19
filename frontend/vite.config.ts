@@ -17,7 +17,12 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          quill: path.resolve(__dirname, 'node_modules/quill'),
+          'quill/dist/quill.snow.css': path.resolve(__dirname, 'node_modules/quill/dist/quill.snow.css'),
         }
+      },
+      css: {
+        devSourcemap: true,
       }
     };
 });
