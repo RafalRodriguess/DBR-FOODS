@@ -98,17 +98,17 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <section className="relative min-h-[62vh] flex items-center bg-hero-pattern pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16">
         <div className="container mx-auto px-6 lg:px-12 z-10">
-          <div className="max-w-4xl animate-float-hero text-center md:text-left">
+          <div className="max-w-4xl animate-float-hero text-left">
             <span className="inline-block px-4 py-1.5 rounded-full bg-gold/20 border border-gold/30 text-gold text-[9px] md:text-[10px] font-semibold tracking-[0.3em] uppercase mb-8 md:mb-10 animate-fadeIn">
               {t.home.hero.badge}
             </span>
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white leading-[1.15] tracking-tight mb-8 md:mb-10">
                {t.home.hero.title}
             </h1>
-            <p className="text-base md:text-2xl text-gray-300 mb-10 md:mb-14 max-w-2xl font-light italic leading-relaxed mx-auto md:mx-0">
+            <p className="text-base md:text-2xl text-gray-300 mb-10 md:mb-14 max-w-2xl font-light italic leading-relaxed">
                {t.home.hero.sub}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center md:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-start">
               <Link to="/products" className="bg-white text-green-950 px-8 md:px-10 py-4 md:py-5 rounded-full font-bold text-[10px] tracking-widest hover:bg-[#DC9C01] transition-colors shadow-2xl flex items-center justify-center gap-3 group">
                 <span className="group-hover:text-white text-green-950 transition-colors">{t.home.cta.products}</span>
                 <ArrowRight size={16} className="group-hover:text-white text-green-950 group-hover:translate-x-1 transition-all shrink-0" />

@@ -19,14 +19,14 @@ const Services: React.FC = () => {
     <div className="bg-white">
       <section className="pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16 bg-services-hero text-white overflow-hidden relative">
         <div className="absolute top-0 right-0 w-1/2 lg:w-1/3 h-full bg-gold/10 blur-[80px] lg:blur-[120px]"></div>
-        <div className="container mx-auto pl-0 pr-6 lg:pr-12 relative z-10">
+        <div className="container mx-auto px-6 lg:px-12 relative z-10 text-left">
           <span className="text-gold font-semibold tracking-[0.3em] text-[10px] mb-4 block uppercase">{t.services.hero.badge}</span>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.15] mb-8">
             {t.services.hero.title}
           </h1>
           <p className="text-white/80 max-w-xl text-base md:text-lg font-medium mb-8">{t.services.hero.sub}</p>
           {t.services.highlights && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 justify-start">
               {t.services.highlights.map((h: string) => (
                 <span key={h} className="px-4 py-2 rounded-full border border-white/25 bg-white/5 text-white text-[10px] font-bold tracking-widest uppercase">
                   {h}

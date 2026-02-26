@@ -96,7 +96,7 @@ const Quote: React.FC = () => {
       <section className="pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16 bg-green-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
-        <div className="container mx-auto px-6 relative z-10">
+        <div className="container mx-auto px-6 lg:px-12 relative z-10 text-left">
           <Link
             to="/products"
             className="inline-flex items-center gap-2 text-white/80 hover:text-gold text-sm font-bold tracking-widest uppercase mb-8 transition-colors"

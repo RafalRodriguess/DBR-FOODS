@@ -98,17 +98,16 @@ const Blog: React.FC = () => {
     <div className="bg-white min-h-screen">
       {/* Editorial Header */}
       <section className="pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16 bg-gray-50 border-b border-gray-100">
-        <div className="container mx-auto pl-0 pr-6 lg:pr-12">
-          <div className="max-w-4xl mx-auto text-center">
+        <div className="container mx-auto px-6 lg:px-12">
+          <div className="max-w-4xl text-left">
             <span className="text-gold font-semibold tracking-[0.4em] text-[10px] mb-6 block uppercase">{t.blog.hero.badge}</span>
             <h1 className="text-4xl md:text-6xl font-bold text-green-950 tracking-tight leading-tight mb-12">
               {t.blog.hero.title.split(' ').slice(0, 2).join(' ')} <br /> <span className="italic font-light">{t.blog.hero.title.split(' ').slice(2).join(' ')}</span>
             </h1>
 
-            {/* Search & Categories — organizado e responsivo */}
+            {/* Search & Categories — alinhado à esquerda */}
             <div className="pt-10 border-t border-gray-200 space-y-6">
-              {/* Search: full width em mobile, alinhado à direita em desktop */}
-              <div className="flex justify-center md:justify-end">
+              <div className="flex justify-start">
                 <div className="relative w-full max-w-sm md:w-72 group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-gold transition-colors" size={16} />
                   <input
@@ -121,10 +120,10 @@ const Blog: React.FC = () => {
               </div>
 
               {/* Categorias: scroll horizontal em mobile, grid wrap em desktop */}
-              <div className="flex flex-col items-center">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3 hidden md:block">{t.blog.filterBy ?? 'Filter by'}</p>
+              <div className="flex flex-col items-start">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">{t.blog.filterBy ?? 'Filter by'}</p>
                 <div className="w-full overflow-x-auto pb-2 -mx-2 px-2 md:overflow-visible md:mx-0 md:px-0 md:max-w-4xl">
-                  <div className="flex gap-2 justify-start md:justify-center flex-wrap min-w-0 md:min-w-full">
+                  <div className="flex gap-2 justify-start flex-wrap min-w-0 md:min-w-full">
                     {categoryOptions.map((cat) => (
                       <button
                         key={cat.slug}

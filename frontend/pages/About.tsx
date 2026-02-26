@@ -45,12 +45,12 @@ const About: React.FC = () => {
       <section className="pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16 bg-green-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
-        <div className="container mx-auto pl-0 pr-6 lg:pr-12 relative z-10">
-          <span className="text-gold font-semibold tracking-[0.3em] text-[10px] mb-4 block uppercase text-center">{t.about.hero.badge}</span>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.15] mb-8 md:mb-12 text-center">
+        <div className="container mx-auto px-6 lg:px-12 relative z-10">
+          <span className="text-gold font-semibold tracking-[0.3em] text-[10px] mb-4 block uppercase text-left">{t.about.hero.badge}</span>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.15] mb-8 md:mb-12 text-left">
             {t.about.hero.title}
           </h1>
-          <p className="max-w-3xl mx-auto text-center text-white/70 text-sm md:text-lg font-medium">{aboutLabels.intro}</p>
+          <p className="max-w-3xl text-left text-white/70 text-sm md:text-lg font-medium">{aboutLabels.intro}</p>
         </div>
       </section>
 

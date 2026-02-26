@@ -117,11 +117,11 @@ const BlogPost: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/40 to-transparent" />
         </div>
 
-        <div className="container mx-auto pl-0 pr-6 lg:pr-12 relative z-10 pb-12 md:pb-20">
+        <div className="container mx-auto px-6 lg:px-12 relative z-10 pb-12 md:pb-20">
           <Link to="/blog" className="inline-flex items-center gap-2 text-white/60 hover:text-gold transition-colors text-[9px] font-black tracking-widest uppercase mb-8 md:mb-12">
             <ArrowLeft size={16} /> {t.common?.back || 'Back'}
           </Link>
-          <div className="max-w-4xl">
+          <div className="max-w-4xl text-left">
             <span className="px-3 py-1 bg-gold text-white text-[9px] font-black tracking-widest uppercase rounded-full mb-6 md:mb-8 inline-block">
               {post.category ?? '-'}
             </span>

@@ -102,13 +102,13 @@ const Products: React.FC = () => {
       <section className="pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16 bg-green-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
-        <div className="container mx-auto pl-0 pr-6 lg:pr-12 relative z-10">
+        <div className="container mx-auto px-6 lg:px-12 relative z-10">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl w-full text-left">
               <span className="text-gold font-semibold tracking-[0.3em] text-[10px] mb-4 block uppercase">{t.products.hero.badge}</span>
               <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6">{t.products.hero.title}</h1>
               <p className="text-white/75 font-medium max-w-xl text-sm md:text-base">{labels.catalogSub}</p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-8 flex flex-wrap items-center gap-3 justify-start">
                 {labels.highlights.map((highlight) => (
                   <span key={highlight} className="px-4 py-2 rounded-full border border-white/20 text-[10px] font-black tracking-widest uppercase text-white/80">
                     {highlight}
@@ -117,8 +117,8 @@ const Products: React.FC = () => {
               </div>
             </div>
             
-            <div className="w-full lg:w-auto">
-               <div className="relative group w-full md:w-80">
+            <div className="w-full lg:w-auto flex justify-start lg:justify-end">
+               <div className="relative group w-full max-w-md md:w-80">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-gold transition-colors" size={20} />
                   <input 
                     type="text" 

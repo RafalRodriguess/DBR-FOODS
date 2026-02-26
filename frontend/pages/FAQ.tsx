@@ -50,12 +50,12 @@ const FAQ: React.FC = () => {
       <section className="pt-32 md:pt-40 lg:pt-44 pb-12 md:pb-16 bg-green-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/70 to-green-950" />
-        <div className="container mx-auto pl-0 pr-6 lg:pr-12 text-center relative z-10">
+        <div className="container mx-auto px-6 lg:px-12 text-left relative z-10">
           <span className="text-gold font-semibold tracking-[0.3em] text-[10px] mb-4 block uppercase">{t.faq.hero.badge}</span>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-8 md:mb-12">
             {t.faq.hero.title.split(' ')[0]} <br /> {t.faq.hero.title.split(' ').slice(1).join(' ')}
           </h1>
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 opacity-90">
+          <div className="flex flex-wrap items-center justify-start gap-3 md:gap-4 opacity-90">
             {['Organic Focus', 'Global Sourcing', 'Quality First'].map((badge) => (
               <span key={badge} className="px-4 py-2 rounded-full border border-white/20 text-[10px] font-black tracking-widest uppercase text-white/80">
                 {badge}
