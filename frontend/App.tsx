@@ -363,22 +363,6 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            {/* Tradutor no menu mobile — comentado por pedido
-            <div className="pt-6 mt-4 border-t border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Idioma</p>
-              <div className="flex gap-2">
-                {['en', 'pt', 'es'].map(l => (
-                  <button
-                    key={l}
-                    onClick={() => { setLang(l as Language); }}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold tracking-widest ${lang === l ? 'bg-gold text-white' : 'bg-gray-100 text-gray-600 hover:bg-gold/20 hover:text-gold'}`}
-                  >
-                    {l.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-            */}
           </nav>
         </div>
       </div>
