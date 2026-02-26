@@ -111,6 +111,7 @@ const baseTranslation = {
   },
   blog: {
     hero: { badge: 'INSIGHTS', title: 'Market Intelligence & Analysis' },
+    filterBy: 'Filter by',
     categories: ['All', 'Supply Chain', 'Sustainability', 'Nutrition', 'Market Trends'],
     featured: 'Featured',
     read: 'read',
@@ -216,6 +217,7 @@ const translations = {
     },
     blog: {
       hero: { badge: 'INSIGHTS', title: 'Inteligência e Análises de Mercado' },
+      filterBy: 'Filtrar por',
       categories: ['Todos', 'Supply Chain', 'Sustainability', 'Nutrition', 'Market Trends'],
       featured: 'Destaque',
       read: 'de leitura',

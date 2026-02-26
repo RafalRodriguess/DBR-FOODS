@@ -105,28 +105,37 @@ const Blog: React.FC = () => {
               {t.blog.hero.title.split(' ').slice(0, 2).join(' ')} <br /> <span className="italic font-light">{t.blog.hero.title.split(' ').slice(2).join(' ')}</span>
             </h1>
 
-            {/* Search & Categories */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8 pt-12 border-t border-gray-200">
-              <div className="flex flex-wrap justify-center gap-3">
-                {categoryOptions.map((cat) => (
-                  <button
-                    key={cat.slug}
-                    onClick={() => setActiveCategory(cat.slug)}
-                    className={`px-6 py-2 rounded-full text-[10px] font-black tracking-widest uppercase transition-all ${activeCategory === cat.slug || (cat.slug === 'all' && !activeCategory) ? 'bg-green-950 text-white shadow-xl' : 'bg-white border border-gray-200 text-gray-500 hover:border-gold hover:text-gold'}`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
+            {/* Search & Categories — organizado e responsivo */}
+            <div className="pt-10 border-t border-gray-200 space-y-6">
+              {/* Search: full width em mobile, alinhado à direita em desktop */}
+              <div className="flex justify-center md:justify-end">
+                <div className="relative w-full max-w-sm md:w-72 group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-gold transition-colors" size={16} />
+                  <input
+                    type="text"
+                    placeholder={t.common.search}
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full text-[10px] font-bold outline-none focus:border-gold transition-all"
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div className="relative w-full md:w-64 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-gold transition-colors" size={16} />
-                <input
-                  type="text"
-                  placeholder={t.common.search}
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full text-[10px] font-bold outline-none focus:border-gold transition-all"
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              {/* Categorias: scroll horizontal em mobile, grid wrap em desktop */}
+              <div className="flex flex-col items-center">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3 hidden md:block">{t.blog.filterBy ?? 'Filter by'}</p>
+                <div className="w-full overflow-x-auto pb-2 -mx-2 px-2 md:overflow-visible md:mx-0 md:px-0 md:max-w-4xl">
+                  <div className="flex gap-2 justify-start md:justify-center flex-wrap min-w-0 md:min-w-full">
+                    {categoryOptions.map((cat) => (
+                      <button
+                        key={cat.slug}
+                        onClick={() => setActiveCategory(cat.slug)}
+                        className={`shrink-0 px-4 py-2 rounded-full text-[10px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${activeCategory === cat.slug || (cat.slug === 'all' && !activeCategory) ? 'bg-green-950 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-gold hover:text-gold'}`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
