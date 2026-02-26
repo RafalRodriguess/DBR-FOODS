@@ -321,6 +321,7 @@ const Navbar = () => {
             {navLinks.map((link) => (
               <Link key={link.path} to={link.path} className={`text-[10px] font-bold tracking-[0.2em] transition-all ${location.pathname === link.path ? 'text-gold hover:text-gold' : `${useLightNavText ? 'text-white/90' : 'text-gray-600'} hover:text-gold`}`}>{link.name}</Link>
             ))}
+            {/* Tradutor / seletor de idioma — comentado por pedido
             <div className="relative">
               <button onClick={() => setShowLang(!showLang)} className={`flex items-center gap-1 text-[10px] font-bold tracking-widest px-3 py-1 rounded-lg border border-current hover:bg-gold hover:text-white ${useLightNavText ? 'text-white' : 'text-green-900'}`}>
                 <Globe size={12} /> {lang.toUpperCase()} <ChevronDown size={10} />
@@ -333,6 +334,7 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+            */}
           </div>
           <button className={`lg:hidden ${useLightNavText ? 'text-white' : 'text-green-900'}`} onClick={() => setIsOpen(!isOpen)} aria-label="Menu">{isOpen ? <X size={28} /> : <Menu size={28} />}</button>
         </div>
@@ -361,6 +363,7 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            {/* Tradutor no menu mobile — comentado por pedido
             <div className="pt-6 mt-4 border-t border-gray-100">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Idioma</p>
               <div className="flex gap-2">
@@ -375,6 +378,7 @@ const Navbar = () => {
                 ))}
               </div>
             </div>
+            */}
           </nav>
         </div>
       </div>
