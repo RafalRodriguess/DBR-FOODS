@@ -45,7 +45,7 @@ const Blog: React.FC = () => {
     else setLoadingMore(true);
     try {
       const params: { category_slug?: string; per_page?: number; page?: number } = {
-        per_page: 2,
+        per_page: 9,
         page,
       };
       if (activeCategory && activeCategory !== 'all') {
@@ -194,8 +194,7 @@ const Blog: React.FC = () => {
                         </div>
                         <h3 className="text-xl font-bold text-green-950 tracking-tight leading-tight group-hover:text-gold transition-colors">{post.title}</h3>
                         <p className="text-gray-500 text-sm leading-relaxed font-medium line-clamp-3">{post.excerpt}</p>
-                        <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">By {post.author_name ?? 'DBR Foods'}</span>
+                        <div className="pt-4 border-t border-gray-100 flex justify-end">
                           <ArrowRight className="text-gold group-hover:translate-x-2 transition-transform" size={20} />
                         </div>
                       </div>
