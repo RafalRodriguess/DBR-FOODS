@@ -149,7 +149,7 @@ const Blog: React.FC = () => {
                 <img
                   src={featuredPost.featured_image || PLACEHOLDER_IMG}
                   alt={featuredPost.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000 grayscale group-hover:grayscale-0"
+                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-transparent to-transparent"></div>
 
@@ -177,7 +177,7 @@ const Blog: React.FC = () => {
                         <img
                           src={post.featured_image || PLACEHOLDER_IMG}
                           alt={post.title}
-                          className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
                         />
                         <div className="absolute top-6 left-6">
                           <span className="bg-white/90 backdrop-blur px-4 py-1.5 rounded-full text-[8px] font-black text-green-950 uppercase tracking-widest shadow-lg">

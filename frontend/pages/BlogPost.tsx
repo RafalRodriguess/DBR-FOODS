@@ -17,6 +17,22 @@ function formatDate(iso?: string): string {
   }
 }
 
+/** Garante que o conteúdo do post seja exibido formatado: se for HTML, usa como está; se for texto puro, converte quebras de linha em parágrafos e <br>. */
+function formatBlogContent(htmlOrText: string): string {
+  if (!htmlOrText || !htmlOrText.trim()) return '';
+  const s = htmlOrText.trim();
+  if (/<[a-z][\s\S]*>/i.test(s)) return s;
+  const escaped = s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  const withParagraphs = escaped
+    .replace(/\r\n\r\n|\n\n/g, '</p><p>')
+    .replace(/\r\n|\n/g, '<br />');
+  return '<p>' + withParagraphs + '</p>';
+}
+
 const BlogPost: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t, lang } = useLang();
@@ -136,8 +152,8 @@ const BlogPost: React.FC = () => {
               className="prose prose-lg md:prose-xl max-w-none min-w-0 break-words overflow-x-hidden text-gray-600 leading-relaxed font-medium 
                 prose-headings:text-green-950 prose-headings:font-black prose-headings:tracking-tighter
                 prose-h3:text-2xl md:prose-h3:text-3xl prose-p:mb-6 md:prose-p:mb-8 prose-h3:mt-10 md:prose-h3:mt-12 prose-h3:mb-4 md:prose-h3:mb-6
-                prose-img:max-w-full prose-img:h-auto"
-              dangerouslySetInnerHTML={{ __html: post.content ?? '' }}
+                prose-img:max-w-full prose-img:h-auto [&_p]:mb-6 md:[&_p]:mb-8"
+              dangerouslySetInnerHTML={{ __html: formatBlogContent(post.content ?? '') }}
             />
           </article>
 

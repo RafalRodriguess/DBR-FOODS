@@ -261,3 +261,194 @@ export async function uploadBlogImage(file: File): Promise<{ url: string }> {
   if (!url) throw new Error('Resposta inválida do servidor.');
   return { url };
 }
+
+/**
+ * Dispara o webhook n8n de criação de post (automação).
+ * Opcional: theme_id (um tema) ou theme_ids (vários) para enviar temas guardados.
+ * Requer auth e permissão manage-blog.
+ */
+export async function triggerCreatePostWebhook(themeIdOrIds?: number | number[]): Promise<{ success: boolean; body?: string | null }> {
+  let body: { theme_id?: number; theme_ids?: number[] } | undefined;
+  if (Array.isArray(themeIdOrIds) && themeIdOrIds.length > 0) {
+    body = { theme_ids: themeIdOrIds };
+  } else if (typeof themeIdOrIds === 'number') {
+    body = { theme_id: themeIdOrIds };
+  }
+  const res = await fetch(`${apiBaseUrl}/api/blog/trigger-create-post-webhook`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as Record<string, unknown> | undefined;
+  if (!res.ok) {
+    const msg = (raw as { message?: string })?.message ?? 'Erro ao disparar webhook.';
+    const errText = typeof msg === 'string' ? msg : 'Erro ao disparar webhook.';
+    const body = (data?.body ?? (raw as { data?: { body?: string } })?.data?.body) as string | undefined;
+    if (body && body.trim()) {
+      throw new Error(`${errText}\n\nResposta do webhook:\n${body.trim()}`);
+    }
+    throw new Error(errText);
+  }
+  const success = data?.success === true;
+  return { success, body: (data?.body as string | null) ?? null };
+}
+
+/** Tema guardado para automação */
+export type BlogTheme = {
+  id: number;
+  url: string;
+  title: string | null;
+  blog_category_id?: number | null;
+  blog_category_ids?: number[] | null;
+  category_name?: string | null;
+  category_names?: string[] | null;
+  content: string | null;
+  topics?: string[];
+  created_at: string;
+  dispatched_at?: string | null;
+  dispatched?: boolean;
+  dispatch_status?: 'processing' | 'completed' | 'failed' | null;
+  approved_at?: string | null;
+  approved?: boolean;
+};
+
+export async function listThemes(): Promise<BlogTheme[]> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/themes`, { headers: getAuthHeaders() });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { blog_themes?: BlogTheme[] } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao carregar temas.');
+  return Array.isArray(data?.blog_themes) ? data.blog_themes : [];
+}
+
+export async function createTheme(payload: { url: string; title?: string | null; blog_category_id?: number | null; blog_category_ids?: number[] | null; content?: string | null; topics?: string[] }): Promise<BlogTheme> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/themes`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { blog_theme?: BlogTheme } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao guardar tema.');
+  if (!data?.blog_theme) throw new Error('Resposta inválida.');
+  return data.blog_theme;
+}
+
+export async function deleteTheme(id: number): Promise<void> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/themes/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+  if (!res.ok) {
+    const raw = await res.json().catch(() => ({}));
+    throw new Error((raw as { message?: string })?.message ?? 'Erro ao eliminar tema.');
+  }
+}
+
+export async function approveTheme(id: number): Promise<BlogTheme> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/themes/${id}/approve`, { method: 'POST', headers: getAuthHeaders() });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { blog_theme?: BlogTheme } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao aprovar tema.');
+  if (!data?.blog_theme) throw new Error('Resposta inválida.');
+  return data.blog_theme;
+}
+
+export async function unapproveTheme(id: number): Promise<BlogTheme> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/themes/${id}/unapprove`, { method: 'POST', headers: getAuthHeaders() });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { blog_theme?: BlogTheme } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao desaprovar tema.');
+  if (!data?.blog_theme) throw new Error('Resposta inválida.');
+  return data.blog_theme;
+}
+
+/** URL fixa cadastrada para pesquisa de tema (só para clicar e buscar tema) */
+export type ThemeSourceUrl = {
+  id: number;
+  url: string;
+  label: string | null;
+  order: number;
+  created_at: string;
+};
+
+export async function listSourceUrls(): Promise<ThemeSourceUrl[]> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/source-urls`, { headers: getAuthHeaders() });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { theme_source_urls?: ThemeSourceUrl[] } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao carregar URLs.');
+  return Array.isArray(data?.theme_source_urls) ? data.theme_source_urls : [];
+}
+
+export async function createSourceUrl(payload: { url: string; label?: string | null }): Promise<ThemeSourceUrl> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/source-urls`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { theme_source_url?: ThemeSourceUrl } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao cadastrar URL.');
+  if (!data?.theme_source_url) throw new Error('Resposta inválida.');
+  return data.theme_source_url;
+}
+
+export async function updateSourceUrl(id: number, payload: { url?: string; label?: string | null }): Promise<ThemeSourceUrl> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/source-urls/${id}`, {
+    method: 'PUT',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as { theme_source_url?: ThemeSourceUrl } | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao atualizar URL.');
+  if (!data?.theme_source_url) throw new Error('Resposta inválida.');
+  return data.theme_source_url;
+}
+
+export async function deleteSourceUrl(id: number): Promise<void> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/source-urls/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+  if (!res.ok) {
+    const raw = await res.json().catch(() => ({}));
+    throw new Error((raw as { message?: string })?.message ?? 'Erro ao remover URL.');
+  }
+}
+
+/** Resposta do config Tavily (automação). */
+export type TavilyConfig = { tavily_configured: boolean };
+
+/**
+ * Verifica se o Tavily está configurado (sem expor a chave). Requer auth e manage-blog.
+ */
+export async function getTavilyConfig(): Promise<TavilyConfig> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/tavily/config`, { headers: getAuthHeaders() });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as TavilyConfig | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao carregar config.');
+  return { tavily_configured: Boolean(data?.tavily_configured) };
+}
+
+/** Um resultado do crawl Tavily (uma página). raw_content pode ser null. */
+export type TavilyCrawlResult = { url: string; raw_content?: string | null; favicon?: string | null };
+
+/** Resposta do crawl Tavily: base_url + results[]. Nunca mais de uma URL por pedido; fila no frontend. */
+export type TavilyCrawlResponse = { success: boolean; url: string; results: TavilyCrawlResult[] };
+
+/**
+ * Pesquisa de tema: envia uma única URL ao Tavily (crawl). A instrução "últimos 3 posts, url e tema" é fixa no backend.
+ */
+export async function tavilyCrawl(url: string): Promise<TavilyCrawlResponse> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/tavily/crawl`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as TavilyCrawlResponse | undefined;
+  if (!res.ok) {
+    const msg = (raw as { message?: string })?.message ?? (raw as { errors?: string })?.errors ?? 'Erro ao pesquisar tema.';
+    throw new Error(typeof msg === 'string' ? msg : 'Erro ao pesquisar tema.');
+  }
+  return {
+    success: Boolean(data?.success),
+    url: (data?.url as string) ?? url,
+    results: Array.isArray(data?.results) ? data.results : [],
+  };
+}

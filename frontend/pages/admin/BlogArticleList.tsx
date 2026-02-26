@@ -14,6 +14,10 @@ type Props = {
   title?: string;
   subtitle?: string;
   showNewButton?: boolean;
+  /** Ação extra no cabeçalho (ex.: botão para disparar webhook de automação) */
+  extraHeaderAction?: React.ReactNode;
+  /** Bloco extra acima da lista (ex.: pesquisa de tema Tavily nas configurações da automação) */
+  extraSectionAboveList?: React.ReactNode;
 };
 
 const BlogArticleList: React.FC<Props> = ({
@@ -25,6 +29,8 @@ const BlogArticleList: React.FC<Props> = ({
   title = 'Artigos do Blog',
   subtitle = 'Gestão de artigos',
   showNewButton = true,
+  extraHeaderAction,
+  extraSectionAboveList,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,17 +84,21 @@ const BlogArticleList: React.FC<Props> = ({
           <h3 className="text-xl md:text-2xl font-black text-green-950 tracking-tight uppercase">{title}</h3>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{subtitle}</p>
         </div>
-        {showNewButton && (
-          <Link
-            to="/admin/blog/new"
-            className="bg-green-950 hover:bg-gold text-white px-5 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2 w-fit"
-          >
-            <Plus size={16} /> Novo artigo
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {extraHeaderAction}
+          {showNewButton && (
+            <Link
+              to="/admin/blog/new"
+              className="bg-green-950 hover:bg-gold text-white px-5 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2 w-fit"
+            >
+              <Plus size={16} /> Novo artigo
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="p-6 md:p-8">
+        {extraSectionAboveList && <div className="mb-6">{extraSectionAboveList}</div>}
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
           <input

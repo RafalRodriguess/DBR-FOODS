@@ -80,6 +80,7 @@ export const menuItems: MenuItem[] = [
     path: '/admin/blog',
     children: [
       { name: 'Artigos', path: '/admin/blog' },
+      { name: 'Tema', path: '/admin/blog/themes' },
       { name: 'Automação', path: '/admin/blog/from-public' },
       { name: 'Categorias', path: '/admin/blog/categories' },
     ],

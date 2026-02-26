@@ -44,6 +44,8 @@ import BlogArticleView from './BlogArticleView';
 import BlogCategoryList from './BlogCategoryList';
 import BlogCategoryForm from './BlogCategoryForm';
 import BlogCategoryView from './BlogCategoryView';
+import TriggerCreatePostWebhookButton from './TriggerCreatePostWebhookButton';
+import BlogThemesPage from './BlogThemesPage';
 import CategoryList from './CategoryList';
 import CategoryForm from './CategoryForm';
 import CategoryView from './CategoryView';
@@ -360,7 +362,7 @@ const AdminDashboard: React.FC = () => {
     setBlogLoading(true);
     setBlogError(null);
     try {
-      const { blog_posts } = await blogApi.listPosts({ per_page: 500 });
+      const { blog_posts } = await blogApi.listPosts({ per_page: 500, status: 'published' });
       setBlog(Array.isArray(blog_posts) ? blog_posts : []);
     } catch (err) {
       setBlog([]);
@@ -376,7 +378,7 @@ const AdminDashboard: React.FC = () => {
     setBlogFromPublicLoading(true);
     setBlogFromPublicError(null);
     try {
-      const { blog_posts } = await blogApi.listPosts({ per_page: 500, source: 'public' });
+      const { blog_posts } = await blogApi.listPosts({ per_page: 500, source: 'public', status: 'draft' });
       setBlogFromPublic(Array.isArray(blog_posts) ? blog_posts : []);
     } catch (err) {
       setBlogFromPublic([]);
@@ -594,7 +596,8 @@ const AdminDashboard: React.FC = () => {
               }
             />
             <Route path="blog" element={<BlogArticleList articles={blog} onRefresh={refreshBlog} loading={blogLoading} loadError={blogError} onDismissError={() => setBlogError(null)} />} />
-            <Route path="blog/from-public" element={<BlogArticleList articles={blogFromPublic} onRefresh={refreshBlogFromPublic} loading={blogFromPublicLoading} loadError={blogFromPublicError} onDismissError={() => setBlogFromPublicError(null)} title="Posts enviados (público)" subtitle="Rascunhos recebidos pela API/automação — edite e publique para aprovar" showNewButton={false} />} />
+            <Route path="blog/themes" element={<BlogThemesPage />} />
+            <Route path="blog/from-public" element={<BlogArticleList articles={blogFromPublic} onRefresh={refreshBlogFromPublic} loading={blogFromPublicLoading} loadError={blogFromPublicError} onDismissError={() => setBlogFromPublicError(null)} title="Posts enviados (público)" subtitle="Rascunhos recebidos pela API/automação — edite e publique para aprovar" showNewButton={false} extraHeaderAction={<TriggerCreatePostWebhookButton />} />} />
             <Route path="blog/categories" element={<BlogCategoryList categorias={blogCategorias} onRefresh={refreshBlogCategorias} />} />
             <Route path="blog/categories/new" element={<BlogCategoryForm mode="create" />} />
             <Route path="blog/categories/:id" element={<BlogCategoryView />} />
