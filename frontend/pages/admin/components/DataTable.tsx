@@ -4,6 +4,7 @@ import { Edit2, Eye, Trash2 } from 'lucide-react';
 export type ColumnDef<T> = {
   key: keyof T;
   label: string;
+  render?: (row: T) => React.ReactNode;
 };
 
 type DataTableProps<T extends { id: number }> = {
@@ -14,6 +15,8 @@ type DataTableProps<T extends { id: number }> = {
   /** Quando definido, o botão Excluir só é exibido quando retorna true (ex.: esconder para o próprio usuário). */
   canDelete?: (row: T) => boolean;
   onView?: (row: T) => void;
+  /** Renderização customizada para coluna de ações (substitui ícones padrão). */
+  renderActions?: (row: T) => React.ReactNode;
   emptyText?: string;
 };
 
@@ -24,9 +27,11 @@ const DataTable = <T extends { id: number }>({
   onDelete,
   canDelete,
   onView,
+  renderActions,
   emptyText = 'Nenhum registro encontrado.',
 }: DataTableProps<T>) => {
   const showDelete = (row: T) => (canDelete ? canDelete(row) : !!onDelete);
+  const hasActions = Boolean(renderActions || onView || onEdit || onDelete);
   if (rows.length === 0) {
     return (
       <div className="border border-dashed border-gray-200 rounded-2xl py-12 text-center">
@@ -45,7 +50,9 @@ const DataTable = <T extends { id: number }>({
                 {col.label}
               </th>
             ))}
-            <th className="text-right pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações</th>
+            {hasActions && (
+              <th className="text-right pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações</th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
@@ -53,28 +60,36 @@ const DataTable = <T extends { id: number }>({
             <tr key={row.id}>
               {columns.map((col) => (
                 <td key={String(col.key)} className="py-4 px-4 text-sm font-medium text-green-950">
-                  {String(row[col.key] ?? '-')}
+                  {col.render ? col.render(row) : String(row[col.key] ?? '-')}
                 </td>
               ))}
-              <td className="py-4 px-4">
-                <div className="flex items-center justify-end gap-2">
-                  {onView && (
-                    <button type="button" onClick={() => onView(row)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-green-950 transition-colors" aria-label="Visualizar">
-                      <Eye size={14} className="mx-auto" />
-                    </button>
-                  )}
-                  {onEdit && (
-                    <button type="button" onClick={() => onEdit(row)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-green-950 transition-colors" aria-label="Editar">
-                      <Edit2 size={14} className="mx-auto" />
-                    </button>
-                  )}
-                  {onDelete && showDelete(row) && (
-                    <button type="button" onClick={() => onDelete(row)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-red-500 transition-colors" aria-label="Excluir">
-                      <Trash2 size={14} className="mx-auto" />
-                    </button>
-                  )}
-                </div>
-              </td>
+              {hasActions && (
+                <td className="py-4 px-4">
+                  <div className="flex items-center justify-end gap-2">
+                    {renderActions ? (
+                      renderActions(row)
+                    ) : (
+                      <>
+                        {onView && (
+                          <button type="button" onClick={() => onView(row)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-green-950 transition-colors" aria-label="Visualizar">
+                            <Eye size={14} className="mx-auto" />
+                          </button>
+                        )}
+                        {onEdit && (
+                          <button type="button" onClick={() => onEdit(row)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-green-950 transition-colors" aria-label="Editar">
+                            <Edit2 size={14} className="mx-auto" />
+                          </button>
+                        )}
+                        {onDelete && showDelete(row) && (
+                          <button type="button" onClick={() => onDelete(row)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-red-500 transition-colors" aria-label="Excluir">
+                            <Trash2 size={14} className="mx-auto" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

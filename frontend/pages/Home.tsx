@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Leaf, ShieldCheck, Microscope, ArrowRight, Globe, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../App';
 import { listPublicProducts, type PublicProductDisplay } from '../utils/productsApi';
 import { listPostsPublic } from '../utils/blogApi';
+
+const MAX_FEATURED_ON_HOME = 4;
 
 const FALLBACK_PRODUCTS: { name: string; img: string; slug?: string }[] = [
   { name: 'Cacao Powder', img: '/produtos/Cacao_Powder_Bowl.webp' },
@@ -24,7 +26,7 @@ const Home: React.FC = () => {
 
   const loadProducts = useCallback(async () => {
     try {
-      const list = await listPublicProducts({ per_page: 20 });
+      const list = await listPublicProducts({ per_page: 50 });
       setProducts(list);
     } catch {
       setProducts([]);
@@ -58,6 +60,11 @@ const Home: React.FC = () => {
 
   const productsSlider = products.length > 0 ? products : FALLBACK_PRODUCTS;
   const productsStrip = products.length > 0 ? products.slice(0, 8) : FALLBACK_PRODUCTS.slice(0, 4);
+  /** Produtos em destaque na seção "Some of our products" (máx 4). Se não houver nenhum marcado, não exibe a seção. */
+  const featuredForHome = useMemo(() => {
+    if (products.length === 0) return [];
+    return products.filter((p) => 'isFeatured' in p && p.isFeatured).slice(0, MAX_FEATURED_ON_HOME);
+  }, [products]);
 
   useEffect(() => {
     if (productsSlider.length === 0) return;
@@ -234,22 +241,24 @@ const Home: React.FC = () => {
                 </div>
               </div>
 
-              {/* Produtos */}
-              <div className="rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/60 p-3 md:p-4 flex-shrink-0">
-                <p className="text-[10px] font-semibold text-gold uppercase tracking-widest mb-3">
-                  {lang === 'pt' ? 'Alguns dos nossos produtos' : lang === 'es' ? 'Algunos de nuestros productos' : 'Some of our products'}
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {productsStrip.slice(0, 4).map((p) => (
-                    <Link key={p.name} to={'slug' in p && p.slug ? `/products/${p.slug}` : '/products'} className="group flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-white p-3 hover:border-gold/40 hover:shadow-md transition-all">
-                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0">
-                        <img src={p.img} alt={p.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
-                      </div>
-                      <span className="text-xs font-semibold text-green-950 group-hover:text-gold transition-colors text-center">{p.name}</span>
-                    </Link>
-                  ))}
+              {/* Produtos em destaque — só exibe se houver algum marcado */}
+              {featuredForHome.length > 0 && (
+                <div className="rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/60 p-3 md:p-4 flex-shrink-0">
+                  <p className="text-[10px] font-semibold text-gold uppercase tracking-widest mb-3">
+                    {lang === 'pt' ? 'Alguns dos nossos produtos' : lang === 'es' ? 'Algunos de nuestros productos' : 'Some of our products'}
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {featuredForHome.map((p) => (
+                      <Link key={p.name} to={'slug' in p && p.slug ? `/products/${p.slug}` : '/products'} className="group flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-white p-3 hover:border-gold/40 hover:shadow-md transition-all">
+                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0">
+                          <img src={p.img} alt={p.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
+                        </div>
+                        <span className="text-xs font-semibold text-green-950 group-hover:text-gold transition-colors text-center">{p.name}</span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Features 2x2 */}
               <div className="grid grid-cols-2 gap-3 md:gap-4 flex-1 min-h-0">

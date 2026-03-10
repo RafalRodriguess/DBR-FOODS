@@ -29,6 +29,10 @@ const BlogThemesPage: React.FC = () => {
     setTab('fila');
   }, []);
 
+  const handleSentToProgress = useCallback(() => {
+    setTab('progresso');
+  }, []);
+
   return (
     <section className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
       <div className="p-6 md:p-8 border-b border-gray-100">
@@ -56,7 +60,7 @@ const BlogThemesPage: React.FC = () => {
       <div className="p-6 md:p-8 space-y-6">
         {tab === 'urls' && <SourceUrlsCard />}
         {tab === 'gerar' && configured !== null && <GenerateThemesCard configured={configured} onThemesCreated={handleThemesCreated} />}
-        {tab === 'fila' && <FilaAprovarCard onThemesChange={() => {}} />}
+        {tab === 'fila' && <FilaAprovarCard onThemesChange={() => {}} onSentToProgress={handleSentToProgress} />}
         {tab === 'progresso' && <InProgressCard />}
       </div>
     </section>

@@ -309,6 +309,9 @@ export type BlogTheme = {
   dispatched_at?: string | null;
   dispatched?: boolean;
   dispatch_status?: 'processing' | 'completed' | 'failed' | null;
+  dispatch_message?: string | null;
+  dispatch_payload?: Record<string, unknown> | null;
+  dispatch_completed_at?: string | null;
   approved_at?: string | null;
   approved?: boolean;
 };

@@ -11,6 +11,7 @@ import {
   X,
   Users,
   Eye,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../App';
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -346,6 +347,12 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     loadProductsAndCategories();
   }, [loadProductsAndCategories]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/products')) {
+      loadProductsAndCategories();
+    }
+  }, [location.pathname, loadProductsAndCategories]);
   const [blogCategorias, setBlogCategorias] = useState<BlogCategory[]>([]);
   const [blog, setBlog] = useState<BlogPost[]>([]);
   const [blogLoading, setBlogLoading] = useState(false);
@@ -415,6 +422,7 @@ const AdminDashboard: React.FC = () => {
   const [contatosMeta, setContatosMeta] = useState<PaginationMeta>({ current_page: 1, last_page: 1, per_page: DEFAULT_PER_PAGE, total: 0 });
   const [newsletter, setNewsletter] = useState<newsletterApi.NewsletterSubscriber[]>([]);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterExporting, setNewsletterExporting] = useState(false);
   const [newsletterPage, setNewsletterPage] = useState(1);
   const [newsletterPerPage, setNewsletterPerPage] = useState(DEFAULT_PER_PAGE);
   const [newsletterMeta, setNewsletterMeta] = useState<PaginationMeta>({ current_page: 1, last_page: 1, per_page: DEFAULT_PER_PAGE, total: 0 });
@@ -459,6 +467,16 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     refreshNewsletter();
   }, [refreshNewsletter]);
+  const exportNewsletter = useCallback(async () => {
+    setNewsletterExporting(true);
+    try {
+      await newsletterApi.exportNewsletterSubscribersExcel();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao exportar newsletter.');
+    } finally {
+      setNewsletterExporting(false);
+    }
+  }, []);
 
   const refreshContatos = useCallback(async () => {
     setContatosLoading(true);
@@ -515,8 +533,38 @@ const AdminDashboard: React.FC = () => {
 
   const newsletterColumns: ColumnDef<newsletterApi.NewsletterSubscriber>[] = [
     { key: 'email', label: 'E-mail' },
-    { key: 'status', label: 'Status' },
     { key: 'data', label: 'Data' },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] font-black uppercase tracking-widest ${row.status === 'active' ? 'text-green-700' : 'text-gray-400'}`}>
+            {row.status === 'active' ? 'Ativo' : 'Inativo'}
+          </span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={row.status === 'active'}
+              disabled={newsletterLoading}
+              onChange={async (e) => {
+                const next = e.target.checked ? 'active' : 'inactive';
+                if (next === row.status) return;
+                try {
+                  await newsletterApi.updateNewsletterStatus(row.id, next);
+                  refreshNewsletter();
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : 'Erro ao atualizar.');
+                }
+              }}
+            />
+            <span className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-950 transition-colors" />
+            <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+          </label>
+        </div>
+      ),
+    },
   ];
 
   const orcamentoColumns: ColumnDef<Orcamento>[] = [
@@ -773,9 +821,20 @@ const AdminDashboard: React.FC = () => {
               path="newsletter"
               element={
                 <section className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="p-6 md:p-8 border-b border-gray-100">
-                    <h3 className="text-xl md:text-2xl font-black text-green-950 uppercase tracking-tight">Gestão de Newsletter</h3>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Lista de inscritos e status (active/inactive para campanhas)</p>
+                  <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-black text-green-950 uppercase tracking-tight">Gestão de Newsletter</h3>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Lista de inscritos e status (active/inactive para campanhas)</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={exportNewsletter}
+                      disabled={newsletterExporting}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-950 hover:bg-gold text-white text-[10px] font-black tracking-widest uppercase transition-colors disabled:opacity-60"
+                    >
+                      <Download size={14} />
+                      {newsletterExporting ? 'Exportando...' : 'Exportar Excel'}
+                    </button>
                   </div>
                   <div className="p-6 md:p-8">
                     <ListPagination
@@ -788,15 +847,6 @@ const AdminDashboard: React.FC = () => {
                     <DataTable
                       columns={newsletterColumns}
                       rows={newsletter}
-                      onEdit={async (row) => {
-                        const next = row.status === 'active' ? 'inactive' : 'active';
-                        try {
-                          await newsletterApi.updateNewsletterStatus(row.id, next);
-                          refreshNewsletter();
-                        } catch (e) {
-                          alert(e instanceof Error ? e.message : 'Erro ao atualizar.');
-                        }
-                      }}
                       emptyText="Nenhum inscrito na newsletter."
                     />
                     <ListPagination

@@ -81,7 +81,7 @@ const Contact: React.FC = () => {
             {t.contact.hero.title}
           </h1>
           <p className="max-w-2xl text-white/70 text-sm md:text-lg font-medium">
-            Compartilhe seu desafio e retornamos com proposta técnica, logística e comercial alinhada ao seu mercado.
+            {t.contact.hero.sub}
           </p>
         </div>
       </section>

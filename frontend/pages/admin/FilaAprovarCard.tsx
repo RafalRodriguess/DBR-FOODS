@@ -11,7 +11,8 @@ import type { BlogTheme } from '../../utils/blogApi';
 
 const FilaAprovarCard: React.FC<{
   onThemesChange?: () => void;
-}> = ({ onThemesChange }) => {
+  onSentToProgress?: () => void;
+}> = ({ onThemesChange, onSentToProgress }) => {
   const [themes, setThemes] = useState<BlogTheme[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +47,18 @@ const FilaAprovarCard: React.FC<{
   const queueThemes = themes.filter((t) => !t.dispatched && !justSentIds.has(t.id));
   const approvedThemes = queueThemes.filter((t) => t.approved);
   const canSelect = (t: BlogTheme) => !t.dispatched && t.approved;
+  const formatCreatedAt = (value?: string | null): string => {
+    if (!value) return 'Data não disponível';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return 'Data inválida';
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
+  };
 
   const toggleSelected = (id: number) => {
     const theme = themes.find((t) => t.id === id);
@@ -102,6 +115,7 @@ const FilaAprovarCard: React.FC<{
         return next;
       });
       refresh();
+      onSentToProgress?.();
       setJustSentIds((prev) => {
         const next = new Set(prev);
         next.delete(themeId);
@@ -133,6 +147,7 @@ const FilaAprovarCard: React.FC<{
       setMessage({ type: 'success', text: `${ids.length} tema(s) enviado(s). Aparecem em «Em progresso».` });
       setSelectedIds(new Set());
       refresh();
+      onSentToProgress?.();
       setJustSentIds((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
@@ -236,6 +251,7 @@ const FilaAprovarCard: React.FC<{
                         )}
                         <p className="font-medium text-green-950 truncate">{t.title || t.url}</p>
                         <p className="text-xs text-gray-500 truncate">{t.url}</p>
+                        <p className="text-[11px] text-gray-400">Gerado em: {formatCreatedAt(t.created_at)}</p>
                       </div>
                     </label>
                   ) : (
@@ -251,6 +267,7 @@ const FilaAprovarCard: React.FC<{
                       )}
                       <p className="font-medium text-green-950 truncate">{t.title || t.url}</p>
                       <p className="text-xs text-gray-500 truncate">{t.url}</p>
+                      <p className="text-[11px] text-gray-400">Gerado em: {formatCreatedAt(t.created_at)}</p>
                     </div>
                   )}
                   <div className="flex items-center gap-2">

@@ -3,7 +3,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   Menu, X, Search, Phone, Mail, MapPin, 
-  Facebook, Linkedin, Instagram, Globe, ChevronDown
+  Linkedin, Globe, ChevronDown
 } from 'lucide-react';
 
 // Public Pages
@@ -17,7 +17,7 @@ import Quote from './pages/Quote.tsx';
 import ProductDetail from './pages/ProductDetail.tsx';
 import Blog from './pages/Blog.tsx';
 import BlogPost from './pages/BlogPost.tsx';
-const logoImage = '/Layer_1-1.png';
+const logoImage = '/Layer_1.png';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin.tsx';
@@ -42,7 +42,7 @@ const baseTranslation = {
   },
   common: { learnMore: 'Learn More', readMore: 'Read More', contactUs: 'Contact Us', back: 'Back', search: 'Search articles...', send: 'Send Message' },
   home: {
-    hero: { badge: 'EST. 2023 • SUPERFOOD SPECIALISTS', title: 'Empowering A Healthier World With Superfoods', sub: 'Architecting transparent supply chains for the next generation of nutrition.' },
+    hero: { badge: 'EST. 2015 • SUPERFOOD SPECIALISTS', title: 'Empowering A Healthier World With Superfoods', sub: 'Architecting transparent supply chains for the next generation of nutrition.' },
     cta: { products: 'EXPLORE PRODUCTS', story: 'OUR STORY' },
     edge: { badge: 'THE DBR EDGE', title: "We don't just trade, we engineer quality.", fulfillment: 'Fast Fulfillment', fulfillmentSub: 'Stock ready at Rotterdam.' },
     features: [
@@ -90,7 +90,7 @@ const baseTranslation = {
     cta: { title: 'Still have questions?', sub: 'Our team can guide you with technical and commercial details.' }
   },
   contact: {
-    hero: { badge: 'CONTACT', title: 'Let us build your next supply operation' },
+    hero: { badge: 'CONTACT', title: 'Let us build your next supply operation', sub: 'Share your challenge and we will come back with a technical, logistics and commercial proposal aligned to your market.' },
     info: {
       location: 'Location',
       email: 'Email',
@@ -202,7 +202,7 @@ const translations = {
       cta: { title: 'Ainda tem dúvidas?', sub: 'Nosso time pode te orientar com detalhes técnicos e comerciais.' }
     },
     contact: {
-      hero: { badge: 'CONTATO', title: 'Vamos construir sua próxima operação de suprimentos' },
+      hero: { badge: 'CONTATO', title: 'Vamos construir sua próxima operação de suprimentos', sub: 'Compartilhe seu desafio e retornamos com proposta técnica, logística e comercial alinhada ao seu mercado.' },
       info: { location: 'Localização', email: 'E-mail', phone: 'Telefone', logistics: 'Suporte Logístico', logisticsSub: 'De Rotterdam para destinos globais com prazos controlados e visibilidade total.' },
       form: {
         name: 'Nome',
@@ -470,21 +470,24 @@ const SiteFooter = () => {
             <p className="flex items-center gap-3"><MapPin size={16} className="text-gold" /> Rotterdam, Netherlands</p>
             <p className="flex items-center gap-3"><Mail size={16} className="text-gold" /> diego@dbr-foods.com</p>
             <p className="flex items-center gap-3"><Phone size={16} className="text-gold" /> +31 6 85008474</p>
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <img src="/Logo_BRC.png" alt="BRC Food certificated" className="h-12 md:h-14 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity" />
+              <img src="/Organic.jpeg" alt="Organic" className="h-12 md:h-14 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity rounded" />
+            </div>
           </div>
 
           <div>
             <h4 className="text-gold text-[10px] font-semibold tracking-[0.25em] uppercase mb-4">{t.footer.socialTitle}</h4>
             <div className="flex items-center gap-3">
-              {[Facebook, Linkedin, Instagram].map((Icon, idx) => (
-                <a
-                  key={idx}
-                  href="#"
-                  className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:border-gold hover:text-gold transition-all"
-                  aria-label="social"
-                >
-                  <Icon size={16} />
-                </a>
-              ))}
+              <a
+                href="https://www.linkedin.com/company/dbr-foods-bv/posts/?feedView=all"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:border-gold hover:text-gold transition-all"
+                aria-label="LinkedIn"
+              >
+                <Linkedin size={16} />
+              </a>
             </div>
           </div>
         </div>

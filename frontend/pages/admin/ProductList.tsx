@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Search, Eye, Edit2, Trash2 } from 'lucide-react';
 import type { Product } from '../../utils/productsApi';
 import { deleteProduct } from '../../utils/productsApi';
 import { apiBaseUrl } from '../../utils/api';
+import SuccessAlert from '../../components/SuccessAlert';
 
 const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?auto=format&fit=crop&w=200&q=80';
 
@@ -17,7 +18,10 @@ function productImageUrl(p: Product): string {
 type Props = { produtos: Product[]; onRefresh: () => void; loading?: boolean };
 
 const ProductList: React.FC<Props> = ({ produtos, onRefresh, loading }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const successMessage = (location.state as { successMessage?: string } | null)?.successMessage;
 
   const filtered = produtos.filter(
     (p) =>
@@ -43,15 +47,31 @@ const ProductList: React.FC<Props> = ({ produtos, onRefresh, loading }) => {
           <h3 className="text-xl md:text-2xl font-black text-green-950 tracking-tight uppercase">Produtos</h3>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Cadastro de produtos</p>
         </div>
-        <Link
-          to="/admin/products/new"
-          className="bg-green-950 hover:bg-gold text-white px-5 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2 w-fit"
-        >
-          <Plus size={16} /> Novo produto
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 hover:text-green-950 hover:border-gold font-black text-[10px] tracking-widest uppercase transition-all"
+          >
+            Atualizar
+          </button>
+          <Link
+            to="/admin/products/new"
+            className="bg-green-950 hover:bg-gold text-white px-5 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2 w-fit"
+          >
+            <Plus size={16} /> Novo produto
+          </Link>
+        </div>
       </div>
 
       <div className="p-6 md:p-8">
+        {successMessage && (
+          <SuccessAlert
+            message={successMessage}
+            className="mb-6"
+            onDismiss={() => navigate(location.pathname, { replace: true, state: {} })}
+          />
+        )}
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
           <input
@@ -73,12 +93,13 @@ const ProductList: React.FC<Props> = ({ produtos, onRefresh, loading }) => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px]">
+            <table className="w-full min-w-[760px]">
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Produto</th>
                   <th className="text-left pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Código</th>
                   <th className="text-left pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Categoria</th>
+                  <th className="text-left pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Destaque</th>
                   <th className="text-left pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estoque</th>
                   <th className="text-left pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
                   <th className="text-right pb-4 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações</th>
@@ -94,11 +115,22 @@ const ProductList: React.FC<Props> = ({ produtos, onRefresh, loading }) => {
                           alt=""
                           className="w-10 h-10 rounded-full object-cover bg-gray-100 shrink-0"
                         />
-                        <span className="text-sm font-medium text-green-950">{p.name}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-green-950">{p.name}</span>
+                        </div>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600">{p.code ?? '-'}</td>
                     <td className="py-4 px-4 text-sm text-gray-600">{p.product_category?.name ?? '-'}</td>
+                    <td className="py-4 px-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                          p.is_featured ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {p.is_featured ? 'Sim' : 'Não'}
+                      </span>
+                    </td>
                     <td className="py-4 px-4 text-sm text-gray-600">{p.stock ?? 0}</td>
                     <td className="py-4 px-4">
                       <span

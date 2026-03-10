@@ -77,3 +77,45 @@ export async function updateNewsletterStatus(id: number, status: 'active' | 'ina
     throw new Error(raw?.message ?? 'Failed to update status.');
   }
 }
+
+/**
+ * Busca todos os inscritos da newsletter (paginado) para exportação.
+ */
+export async function listAllNewsletterSubscribers(perPage = 500): Promise<NewsletterSubscriber[]> {
+  let page = 1;
+  let lastPage = 1;
+  const all: NewsletterSubscriber[] = [];
+
+  do {
+    const { subscribers, meta } = await listNewsletter({ per_page: perPage, page });
+    all.push(...subscribers);
+    lastPage = Number(meta?.last_page ?? 1);
+    page += 1;
+  } while (page <= lastPage);
+
+  return all;
+}
+
+/**
+ * Exporta a lista completa de inscritos para Excel (.xlsx).
+ */
+export async function exportNewsletterSubscribersExcel(filename?: string): Promise<void> {
+  const subscribers = await listAllNewsletterSubscribers();
+  const XLSX = await import('xlsx');
+
+  const headers = ['ID', 'E-mail', 'Status', 'Data'];
+  const rows = subscribers.map((s) => [
+    s.id,
+    s.email,
+    s.status === 'active' ? 'Ativo' : 'Inativo',
+    s.data,
+  ]);
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  worksheet['!cols'] = [{ wch: 8 }, { wch: 42 }, { wch: 14 }, { wch: 16 }];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Newsletter');
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(workbook, filename ?? `newsletter-${stamp}.xlsx`);
+}

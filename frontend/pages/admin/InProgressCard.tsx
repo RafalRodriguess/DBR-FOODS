@@ -13,6 +13,19 @@ function formatDate(iso?: string | null): string {
   }
 }
 
+function payloadPostInfo(payload?: Record<string, unknown> | null): string {
+  if (!payload || typeof payload !== 'object') return '';
+  const post = payload.blog_post;
+  if (!post || typeof post !== 'object') return '';
+  const title = typeof (post as { title?: unknown }).title === 'string' ? String((post as { title?: unknown }).title).trim() : '';
+  const idRaw = (post as { id?: unknown }).id;
+  const id = typeof idRaw === 'number' || typeof idRaw === 'string' ? String(idRaw) : '';
+  if (title && id) return `Post: ${title} (ID ${id})`;
+  if (title) return `Post: ${title}`;
+  if (id) return `Post ID: ${id}`;
+  return '';
+}
+
 function statusBadge(status: BlogTheme['dispatch_status']) {
   const s = status ?? 'processing';
   if (s === 'completed') {
@@ -91,6 +104,19 @@ const InProgressCard: React.FC = () => {
                 <p className="text-[10px] text-gray-400 mt-0.5">
                   Enviado: {formatDate(t.dispatched_at)}
                 </p>
+                {t.dispatch_completed_at && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    Finalizado: {formatDate(t.dispatch_completed_at)}
+                  </p>
+                )}
+                {t.dispatch_message && (
+                  <p className={`text-xs mt-1 ${t.dispatch_status === 'failed' ? 'text-red-600' : 'text-green-700'}`}>
+                    {t.dispatch_message}
+                  </p>
+                )}
+                {!t.dispatch_message && payloadPostInfo(t.dispatch_payload) && (
+                  <p className="text-xs text-green-700 mt-1">{payloadPostInfo(t.dispatch_payload)}</p>
+                )}
               </div>
               {statusBadge(t.dispatch_status)}
             </li>

@@ -27,6 +27,8 @@ export type Product = {
   product_category?: ProductCategory | null;
   benefits?: Benefit[];
   ingredients?: Ingredient[];
+  /** Produto em destaque na homepage (máx. 4 exibidos na seção "Some of our products") */
+  is_featured?: boolean;
 };
 
 function paginatedData<T>(payload: unknown, key: string): T[] {
@@ -212,6 +214,7 @@ export async function createProduct(body: Partial<Product> & { name: string; ben
       sizes: body.sizes ?? [],
       benefit_ids: body.benefit_ids ?? [],
       ingredient_ids: body.ingredient_ids ?? [],
+      is_featured: body.is_featured ?? false,
     }),
   });
   const item = await handleRes(res, (d) => singlePayload(d, 'product'));
@@ -229,6 +232,7 @@ export async function updateProduct(id: number, body: Partial<Product> & { benef
       sizes: body.sizes ?? [],
       benefit_ids: body.benefit_ids,
       ingredient_ids: body.ingredient_ids,
+      is_featured: body.is_featured,
     }),
   });
   const item = await handleRes(res, (d) => singlePayload(d, 'product'));
@@ -262,6 +266,7 @@ export type PublicProductDisplay = {
   applications: string;
   sizes: string[];
   hasFreeSample: boolean;
+  isFeatured: boolean;
 };
 
 const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?auto=format&fit=crop&w=500&q=80';
@@ -287,21 +292,27 @@ export function mapApiProductToDisplay(p: Product): PublicProductDisplay {
     applications: p.applications ?? '',
     sizes: p.sizes ?? [],
     hasFreeSample: p.has_free_sample ?? false,
+    isFeatured: p.is_featured ?? false,
   };
 }
 
-export async function listPublicProducts(params?: { search?: string; product_category_id?: number; per_page?: number }): Promise<PublicProductDisplay[]> {
+export async function listPublicProducts(params?: { search?: string; product_category_id?: number; per_page?: number; featured?: boolean }): Promise<PublicProductDisplay[]> {
   const url = new URL(`${apiBaseUrl}/api/products/public`);
   if (params?.search) url.searchParams.set('search', params.search);
   if (params?.product_category_id) url.searchParams.set('product_category_id', String(params.product_category_id));
   if (params?.per_page) url.searchParams.set('per_page', String(params.per_page));
+  if (params?.featured === true) url.searchParams.set('featured', '1');
   const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { message?: string })?.message ?? 'Erro ao carregar produtos.');
   const payload = (data?.data ?? data) as Record<string, unknown>;
   const products = payload?.products as { data?: Product[] } | Product[] | undefined;
   const list = Array.isArray(products) ? products : (products as { data?: Product[] })?.data ?? [];
-  return list.map(mapApiProductToDisplay);
+  const mapped = list.map(mapApiProductToDisplay);
+  if (params?.featured === true) {
+    return mapped.filter((p) => p.isFeatured).slice(0, 4);
+  }
+  return mapped;
 }
 
 export async function getProductBySlugPublic(slug: string): Promise<PublicProductDisplay | null> {

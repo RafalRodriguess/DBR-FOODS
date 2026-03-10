@@ -9,6 +9,7 @@ import {
 } from '../../utils/blogApi';
 import type { ThemeSourceUrl } from '../../utils/blogApi';
 import type { BlogCategory } from '../../utils/blogApi';
+import type { BlogTheme } from '../../utils/blogApi';
 import {
   contentFromScrapeResult,
   getDisplayText,
@@ -27,6 +28,10 @@ const GenerateThemesCard: React.FC<{
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [progress, setProgress] = useState<string>('');
+  const [requestedCount, setRequestedCount] = useState(0);
+  const [processedUrlsCount, setProcessedUrlsCount] = useState(0);
+  const [lastGeneratedThemes, setLastGeneratedThemes] = useState<BlogTheme[]>([]);
+  const [recentThemes, setRecentThemes] = useState<BlogTheme[]>([]);
 
   const loadSourceUrls = useCallback(async () => {
     try {
@@ -46,16 +51,47 @@ const GenerateThemesCard: React.FC<{
     }
   }, []);
 
+  const loadRecentThemes = useCallback(async () => {
+    try {
+      const list = await listThemes();
+      setRecentThemes(list.slice(0, 8));
+    } catch {
+      setRecentThemes([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (configured) {
       loadSourceUrls();
       loadCategories();
+      loadRecentThemes();
     }
-  }, [configured, loadSourceUrls, loadCategories]);
+  }, [configured, loadSourceUrls, loadCategories, loadRecentThemes]);
 
   /** Normaliza título para comparação (evitar duplicados). */
   const normalizeTitle = (t: string | null | undefined): string =>
     (t ?? '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 80);
+
+  /** Assinatura estável dos tópicos para impedir temas semanticamente iguais. */
+  const topicsSignature = (topics: string[] | null | undefined): string =>
+    (topics ?? [])
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+      .join('|');
+
+  const formatCreatedAt = (value?: string | null): string => {
+    if (!value) return 'Data não disponível';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return 'Data inválida';
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
+  };
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,11 +106,20 @@ const GenerateThemesCard: React.FC<{
     const n = Math.max(1, Math.min(50, quantity));
     setMessage(null);
     setGenerating(true);
+    setRequestedCount(n);
+    setProcessedUrlsCount(0);
+    setLastGeneratedThemes([]);
 
-    let existingThemes: { url: string; title: string | null }[] = [];
+    let existingThemes: { url: string; title: string | null; topics?: string[] }[] = [];
+    const usedTopicSignatures = new Set<string>();
+    const createdThisRun: BlogTheme[] = [];
     try {
       const list = await listThemes();
-      existingThemes = list.map((t) => ({ url: t.url, title: t.title ?? null }));
+      existingThemes = list.map((t) => ({ url: t.url, title: t.title ?? null, topics: t.topics ?? [] }));
+      for (const t of list) {
+        const sig = topicsSignature(t.topics ?? []);
+        if (sig) usedTopicSignatures.add(sig);
+      }
     } catch {
       // segue sem lista de existentes
     }
@@ -91,19 +136,21 @@ const GenerateThemesCard: React.FC<{
       const position = urlIdx + 1;
       setProgress(`URL ${position}/${totalUrls}: ${urlObj.label || urlObj.url} — ${created} tema(s) gerado(s)`);
       urlRoundIndex++;
+      setProcessedUrlsCount(urlRoundIndex);
       try {
         const data = await tavilyCrawl(urlObj.url);
         const results = data.results ?? [];
+        let createdForCurrentUrl = false;
         for (const result of results) {
-          if (created >= n) break;
+          if (created >= n || createdForCurrentUrl) break;
           if (result.raw_content == null || result.raw_content === '') continue;
           const pageUrl = result.url || data.url;
           const displayText = getDisplayText(result);
           if (!displayText || displayText.trim().length < 50) continue;
-          let matchedNames = matchCategoriesInText(displayText, categories);
-          const useFallbackCategory = matchedNames.length === 0 && categories.length > 0;
-          if (matchedNames.length === 0 && !useFallbackCategory) continue;
-          if (useFallbackCategory) matchedNames = [categories[0].name];
+          const matchedNames = matchCategoriesInText(displayText, categories);
+          if (matchedNames.length === 0) continue;
+          const signature = topicsSignature(matchedNames);
+          if (signature && usedTopicSignatures.has(signature)) continue;
           const blogCategoryIds = matchedNames
             .map((name) => categories.find((c) => c.name === name)?.id)
             .filter((id): id is number => id != null);
@@ -112,11 +159,13 @@ const GenerateThemesCard: React.FC<{
           const fallbackTitle = generateTitleFromTopics(matchedNames);
           const titleToSave = extractedTitle || fallbackTitle || null;
           const normNew = normalizeTitle(titleToSave);
-          const alreadySameUrlAndTitle = existingThemes.some(
-            (e) => e.url === pageUrl && normNew && normalizeTitle(e.title) === normNew
+          const alreadySameUrl = existingThemes.some((e) => e.url === pageUrl);
+          if (alreadySameUrl) continue;
+          const alreadySameTitle = existingThemes.some(
+            (e) => normNew && normalizeTitle(e.title) === normNew
           );
-          if (alreadySameUrlAndTitle) continue;
-          await createTheme({
+          if (alreadySameTitle) continue;
+          const createdTheme = await createTheme({
             url: pageUrl,
             title: titleToSave || null,
             blog_category_ids: blogCategoryIds.length > 0 ? blogCategoryIds : undefined,
@@ -124,7 +173,10 @@ const GenerateThemesCard: React.FC<{
             topics: matchedNames,
           });
           created++;
-          existingThemes.push({ url: pageUrl, title: titleToSave });
+          createdForCurrentUrl = true;
+          createdThisRun.push(createdTheme);
+          existingThemes.push({ url: pageUrl, title: titleToSave, topics: matchedNames });
+          if (signature) usedTopicSignatures.add(signature);
         }
       } catch {
         // esta URL falhou, segue para a próxima na fila
@@ -133,8 +185,13 @@ const GenerateThemesCard: React.FC<{
 
     setGenerating(false);
     setProgress('');
+    setLastGeneratedThemes(createdThisRun);
+    loadRecentThemes();
     if (created > 0) {
-      setMessage({ type: 'success', text: `${created} tema(s) gerado(s) e adicionados à fila. Vá à aba «Fila / Aprovar» para aprovar e enviar.` });
+      setMessage({
+        type: 'success',
+        text: `${created} de ${n} tema(s) gerado(s) com sucesso e adicionados à fila. Agora pode aprovar e enviar na aba «Fila / Aprovar».`,
+      });
       onThemesCreated();
     } else {
       setMessage({
@@ -191,12 +248,51 @@ const GenerateThemesCard: React.FC<{
             </button>
           </form>
           {generating && progress && <p className="text-xs text-gray-500">{progress}</p>}
+          {generating && (
+            <div className="rounded-xl border border-gray-200 bg-white p-3">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Processo de geração</p>
+              <p className="text-xs text-gray-600 mt-1">
+                Solicitado: <strong>{requestedCount}</strong> tema(s) | URLs processadas: <strong>{processedUrlsCount}</strong>
+              </p>
+              <p className="text-xs text-gray-500 mt-1">A geração evita temas duplicados por URL, título e tópicos.</p>
+            </div>
+          )}
         </>
       )}
       {message && (
         <p className={`text-[10px] font-bold uppercase ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
           {message.text}
         </p>
+      )}
+      {lastGeneratedThemes.length > 0 && (
+        <div className="rounded-xl border border-green-100 bg-green-50/40 p-4 space-y-2">
+          <p className="text-[10px] font-black text-green-900 uppercase tracking-widest">Finalização: temas gerados</p>
+          <ul className="space-y-2">
+            {lastGeneratedThemes.map((t) => (
+              <li key={t.id} className="rounded-lg border border-green-100 bg-white p-3">
+                <p className="text-sm font-semibold text-green-950 truncate">{t.title || t.url}</p>
+                <p className="text-xs text-gray-500 truncate">{t.url}</p>
+                {t.topics && t.topics.length > 0 && (
+                  <p className="text-xs text-gray-600 mt-1">Tópicos: {t.topics.join(', ')}</p>
+                )}
+                <p className="text-[11px] text-gray-400 mt-1">Gerado em: {formatCreatedAt(t.created_at)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {recentThemes.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Últimos temas gerados</p>
+          <ul className="space-y-2">
+            {recentThemes.map((t) => (
+              <li key={`recent-${t.id}`} className="text-xs text-gray-700">
+                <span className="font-semibold text-green-950">{t.title || t.url}</span>
+                <span className="text-gray-500"> — {formatCreatedAt(t.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

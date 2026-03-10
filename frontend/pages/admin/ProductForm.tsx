@@ -34,6 +34,7 @@ const ProductForm: React.FC<{ mode: 'create' | 'edit' }> = ({ mode }) => {
     status: 'active' as string,
     benefit_ids: [] as number[],
     ingredient_ids: [] as number[],
+    is_featured: false,
   });
 
   useEffect(() => {
@@ -68,6 +69,7 @@ const ProductForm: React.FC<{ mode: 'create' | 'edit' }> = ({ mode }) => {
               status: p.status ?? 'active',
               benefit_ids: (p.benefits ?? []).map((b) => b.id),
               ingredient_ids: (p.ingredients ?? []).map((i) => i.id),
+              is_featured: p.is_featured ?? false,
             });
           }
         })
@@ -127,13 +129,14 @@ const ProductForm: React.FC<{ mode: 'create' | 'edit' }> = ({ mode }) => {
         status: form.status,
         benefit_ids: form.benefit_ids,
         ingredient_ids: form.ingredient_ids,
+        is_featured: form.is_featured,
       };
       if (mode === 'create') {
         await createProduct(payload);
-        navigate('/admin/products');
+        navigate('/admin/products', { state: { successMessage: 'Produto criado com sucesso.' } });
       } else if (id) {
         await updateProduct(Number(id), payload);
-        navigate('/admin/products');
+        navigate('/admin/products', { state: { successMessage: 'Produto atualizado com sucesso.' } });
       }
     } catch (err) {
       alert((err as Error).message ?? 'Erro ao salvar.');
@@ -351,6 +354,21 @@ const ProductForm: React.FC<{ mode: 'create' | 'edit' }> = ({ mode }) => {
               <span className="text-sm font-bold text-green-950">Liberado para amostra grátis</span>
             </label>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.is_featured}
+              onChange={(e) => setForm((p) => ({ ...p, is_featured: e.target.checked }))}
+              className="w-5 h-5 accent-gold rounded mt-0.5"
+            />
+            <div>
+              <span className="text-sm font-bold text-green-950 block">Produto em destaque</span>
+              <span className="text-xs text-gray-600 mt-1 block">Aparece na seção &quot;Alguns dos nossos produtos&quot; na homepage. No máximo 4 produtos podem estar em destaque; apenas os 4 primeiros marcados são exibidos.</span>
+            </div>
+          </label>
         </div>
 
         <div className="flex gap-3 pt-4">
