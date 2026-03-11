@@ -7,6 +7,7 @@ import {
   Package,
   ClipboardList,
   Users,
+  Settings,
 } from 'lucide-react';
 
 export type Categoria = { id: number; nome: string };
@@ -89,6 +90,7 @@ export const menuItems: MenuItem[] = [
   { name: 'Contatos', icon: MessageSquare, path: '/admin/contacts' },
   { name: 'Orçamentos', icon: ClipboardList, path: '/admin/quotes' },
   { name: 'Newsletter', icon: Mail, path: '/admin/newsletter' },
+  { name: 'Dados', icon: Settings, path: '/admin/data' },
   {
     name: 'Usuários',
     icon: Users,

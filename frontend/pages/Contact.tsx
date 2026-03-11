@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Mail, Phone, MapPin, Send, Globe, CheckCircle } from 'lucide-react';
 import { useLang } from '../App';
 import { createContact } from '../utils/contactsApi';
 import Modal from './admin/components/Modal';
+import { getSiteSettingsPublic, type SiteSettings } from '../utils/siteSettingsApi';
 
 const getFlag = (cc: string) =>
   cc.length === 2
@@ -69,6 +70,19 @@ const Contact: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [error, setError] = useState('');
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    contact_location: 'Shannonweg 81-83, 3197, Rotterdam - Netherlands',
+    contact_email: 'diego@dbr-foods.com',
+    contact_phone: '+31 6 85008474',
+    contact_map_embed_url:
+      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2462.404557997384!2d4.341108212450419!3d51.89010047178351!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c44be49f50f493%3A0xe5a3c07f43b6771e!2sShannonweg%2081%2C%203197%20LG%20Rotterdam!5e0!3m2!1sen!2snl!4v1700000000000!5m2!1sen!2snl',
+  });
+
+  useEffect(() => {
+    getSiteSettingsPublic().then(setSiteSettings).catch(() => {
+      // Mantem fallback do frontend caso a API falhe.
+    });
+  }, []);
 
   return (
     <div className="bg-white">
@@ -98,7 +112,7 @@ const Contact: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-[10px] font-black text-gold uppercase tracking-widest mb-2">{t.contact.info.location}</h4>
-                    <p className="text-green-950 text-sm md:text-base font-bold leading-relaxed">Shannonweg 81-83, 3197, <br /> Rotterdam – Netherlands</p>
+                    <p className="text-green-950 text-sm md:text-base font-bold leading-relaxed">{siteSettings.contact_location}</p>
                   </div>
                </div>
                
@@ -108,7 +122,7 @@ const Contact: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-[10px] font-black text-gold uppercase tracking-widest mb-2">{t.contact.info.email}</h4>
-                    <p className="text-green-950 text-sm md:text-base font-bold leading-relaxed">diego@dbr-foods.com</p>
+                    <p className="text-green-950 text-sm md:text-base font-bold leading-relaxed">{siteSettings.contact_email}</p>
                   </div>
                </div>
 
@@ -118,7 +132,7 @@ const Contact: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-[10px] font-black text-gold uppercase tracking-widest mb-2">{t.contact.info.phone}</h4>
-                    <p className="text-green-950 text-sm md:text-base font-bold leading-relaxed">+31 6 85008474</p>
+                    <p className="text-green-950 text-sm md:text-base font-bold leading-relaxed">{siteSettings.contact_phone}</p>
                   </div>
                </div>
              </div>
@@ -249,7 +263,7 @@ const Contact: React.FC = () => {
         <div className="container mx-auto">
           <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gray-100 rounded-[2rem] md:rounded-[4rem] overflow-hidden shadow-2xl border-[6px] md:border-[12px] border-white grayscale hover:grayscale-0 transition-all duration-1000">
             <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2462.404557997384!2d4.341108212450419!3d51.89010047178351!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c44be49f50f493%3A0xe5a3c07f43b6771e!2sShannonweg%2081%2C%203197%20LG%20Rotterdam!5e0!3m2!1sen!2snl!4v1700000000000!5m2!1sen!2snl" 
+              src={siteSettings.contact_map_embed_url}
               width="100%" 
               height="100%" 
               style={{ border: 0 }} 

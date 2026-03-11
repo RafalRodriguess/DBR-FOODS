@@ -23,6 +23,7 @@ const logoImage = '/Layer_1.png';
 import AdminLogin from './pages/admin/AdminLogin.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 import { QuoteProvider } from './context/QuoteContext.tsx';
+import { getSiteSettingsPublic, type SiteSettings } from './utils/siteSettingsApi';
 
 const baseTranslation = {
   nav: { home: 'HOME', products: 'PRODUCTS', about: 'ABOUT', services: 'SERVICES', blog: 'BLOG', faq: 'FAQ', contact: 'CONTACT', quote: 'GET A QUOTE', admin: 'ADMIN' },
@@ -376,6 +377,18 @@ const SiteFooter = () => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [newsletterError, setNewsletterError] = useState('');
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    contact_location: 'Shannonweg 81-83, 3197, Rotterdam - Netherlands',
+    contact_email: 'diego@dbr-foods.com',
+    contact_phone: '+31 6 85008474',
+    contact_map_embed_url: '',
+  });
+
+  useEffect(() => {
+    getSiteSettingsPublic().then(setSiteSettings).catch(() => {
+      // Mantem fallback do frontend caso a API falhe.
+    });
+  }, []);
 
   if (location.pathname.startsWith('/admin')) return null;
 
@@ -467,9 +480,9 @@ const SiteFooter = () => {
 
           <div className="space-y-3 text-sm text-white/70">
             <h4 className="text-gold text-[10px] font-semibold tracking-[0.25em] uppercase mb-4">{t.footer.contactTitle}</h4>
-            <p className="flex items-center gap-3"><MapPin size={16} className="text-gold" /> Rotterdam, Netherlands</p>
-            <p className="flex items-center gap-3"><Mail size={16} className="text-gold" /> diego@dbr-foods.com</p>
-            <p className="flex items-center gap-3"><Phone size={16} className="text-gold" /> +31 6 85008474</p>
+            <p className="flex items-center gap-3"><MapPin size={16} className="text-gold" /> {siteSettings.contact_location}</p>
+            <p className="flex items-center gap-3"><Mail size={16} className="text-gold" /> {siteSettings.contact_email}</p>
+            <p className="flex items-center gap-3"><Phone size={16} className="text-gold" /> {siteSettings.contact_phone}</p>
             <div className="flex flex-wrap items-center gap-4 pt-4">
               <img src="/Logo_BRC.png" alt="BRC Food certificated" className="h-12 md:h-14 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity" />
               <img src="/Organic.jpeg" alt="Organic" className="h-12 md:h-14 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity rounded" />
@@ -509,6 +522,60 @@ const SiteFooter = () => {
   );
 };
 
+const SEOManager: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const siteUrl = 'https://serverdbrfoods.online';
+    const path = location.pathname;
+
+    const seoByRoute: Array<{ match: RegExp; title: string; description: string }> = [
+      { match: /^\/$/, title: 'DBR Foods | Superfoods e Supply Chain Global', description: 'Sourcing global de superfoods e ingredientes naturais com rastreabilidade e eficiencia logistica.' },
+      { match: /^\/products/, title: 'Produtos | DBR Foods', description: 'Catalogo de superfoods e ingredientes naturais para importadores, distribuidores e fabricantes.' },
+      { match: /^\/about/, title: 'About | DBR Foods', description: 'Learn about DBR Foods and our supply chain model between Latin America and Europe.' },
+      { match: /^\/services/, title: 'Servicos | DBR Foods', description: 'Servicos integrados de sourcing, qualidade, compliance e logistica internacional.' },
+      { match: /^\/blog/, title: 'Blog | DBR Foods', description: 'Insights de mercado, supply chain e tendencias de ingredientes naturais.' },
+      { match: /^\/faq/, title: 'FAQ | DBR Foods', description: 'Perguntas frequentes sobre produtos, logistica, certificacoes e operacao internacional.' },
+      { match: /^\/contact/, title: 'Contato | DBR Foods', description: 'Fale com a DBR Foods para oportunidades comerciais, tecnicas e logisticas.' },
+      { match: /^\/quote/, title: 'Quote | DBR Foods', description: 'Request a quote for superfoods and natural ingredients from DBR Foods.' },
+      { match: /^\/admin/, title: 'Painel Admin | DBR Foods', description: 'Area administrativa DBR Foods.' },
+    ];
+
+    const current = seoByRoute.find((item) => item.match.test(path)) ?? seoByRoute[0];
+    const canonicalUrl = `${siteUrl}${path}`;
+
+    document.title = current.title;
+
+    const setMeta = (selector: string, attr: 'name' | 'property', content: string) => {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, selector.includes('[name=') ? selector.match(/name="([^"]+)"/)?.[1] ?? '' : selector.match(/property="([^"]+)"/)?.[1] ?? '');
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', canonicalUrl);
+
+    setMeta('meta[name="description"]', 'name', current.description);
+    setMeta('meta[property="og:title"]', 'property', current.title);
+    setMeta('meta[property="og:description"]', 'property', current.description);
+    setMeta('meta[property="og:url"]', 'property', canonicalUrl);
+    setMeta('meta[name="twitter:title"]', 'name', current.title);
+    setMeta('meta[name="twitter:description"]', 'name', current.description);
+    setMeta('meta[name="robots"]', 'name', path.startsWith('/admin') ? 'noindex,nofollow' : 'index,follow');
+  }, [location.pathname]);
+
+  return null;
+};
+
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_USER_KEY = 'auth_user';
 
@@ -537,7 +604,7 @@ function readStoredUser(): AuthUser | null {
 }
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>('en');
+  const [lang] = useState<Language>('en');
   const [user, setUser] = useState<AuthUser | null>(() =>
     localStorage.getItem(AUTH_TOKEN_KEY) ? readStoredUser() : null
   );
@@ -558,11 +625,12 @@ const App: React.FC = () => {
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t: translations[lang] || translations.en }}>
+    <LanguageContext.Provider value={{ lang: 'en', setLang: () => {}, t: translations.en }}>
       <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
         <QuoteProvider>
         <Router>
           <ScrollToTop />
+          <SEOManager />
           <div className="min-h-screen flex flex-col antialiased">
             <Navbar />
             <main className="flex-grow">

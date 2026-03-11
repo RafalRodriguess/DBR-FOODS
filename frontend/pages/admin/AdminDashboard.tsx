@@ -12,6 +12,7 @@ import {
   Users,
   Eye,
   Download,
+  User,
 } from 'lucide-react';
 import { useAuth } from '../../App';
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -57,6 +58,7 @@ import UserList from './UserList';
 import UserForm from './UserForm';
 import RolesList from './RolesList';
 import RoleForm from './RoleForm';
+import SiteDataPage from './SiteDataPage';
 const logoImage = '/Layer_1-1.png';
 
 const DashboardCards = ({
@@ -322,6 +324,7 @@ const AdminRedirectToDashboard: React.FC = () => {
 };
 
 const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -599,10 +602,12 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="hidden md:flex items-center gap-4 border-l border-gray-200 pl-6">
               <div className="text-right">
-                <p className="text-xs font-black text-green-950">Diego Rodrigues</p>
-                <p className="text-[10px] text-gold font-bold uppercase">Administrador</p>
+                <p className="text-xs font-black text-green-950">{user?.name || 'Usuário'}</p>
+                <p className="text-[10px] text-gold font-bold uppercase">{user?.email || 'Administrador'}</p>
               </div>
-              <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80" alt="Admin" className="w-10 h-10 rounded-xl object-cover grayscale" />
+              <span className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 text-green-950 flex items-center justify-center" aria-hidden="true">
+                <User size={18} />
+              </span>
             </div>
           </div>
         </header>
@@ -860,6 +865,7 @@ const AdminDashboard: React.FC = () => {
                 </section>
               }
             />
+            <Route path="data" element={<SiteDataPage />} />
             <Route path="*" element={<DashboardCards contatos={contatos} newsletter={newsletter} orcamentos={orcamentos} produtos={produtos} blog={blog} faqs={faqs} />} />
           </Routes>
         </main>
