@@ -49,14 +49,14 @@ function statusBadge(status: BlogTheme['dispatch_status']) {
   );
 }
 
-const InProgressCard: React.FC = () => {
+const InProgressCard: React.FC<{ refreshTrigger?: number }> = ({ refreshTrigger = 0 }) => {
   const [themes, setThemes] = useState<BlogTheme[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadThemes = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await listThemes();
+      const list = await listThemes('in_progress');
       setThemes(list);
     } catch {
       setThemes([]);
@@ -67,9 +67,25 @@ const InProgressCard: React.FC = () => {
 
   useEffect(() => {
     loadThemes();
-  }, [loadThemes]);
+  }, [loadThemes, refreshTrigger]);
 
-  const inProgress = themes.filter((t) => t.dispatched && t.approved).sort((a, b) => {
+  /** Polling a cada 12s enquanto houver itens (doc §2): ao callback saem daqui. Paragem em 3 min no máximo. */
+  useEffect(() => {
+    if (themes.length === 0) return;
+    const POLL_INTERVAL_MS = 12000; // 10–15 s conforme doc
+    const MAX_POLLING_MS = 180000;   // 3 min
+    const id = setInterval(loadThemes, POLL_INTERVAL_MS);
+    const maxTimeout = setTimeout(() => {
+      clearInterval(id);
+      loadThemes(); // último refetch antes de parar
+    }, MAX_POLLING_MS);
+    return () => {
+      clearInterval(id);
+      clearTimeout(maxTimeout);
+    };
+  }, [themes.length, loadThemes]);
+
+  const inProgress = [...themes].sort((a, b) => {
     const da = a.dispatched_at ?? '';
     const db = b.dispatched_at ?? '';
     return db.localeCompare(da);
@@ -84,7 +100,7 @@ const InProgressCard: React.FC = () => {
       {loading ? (
         <p className="text-sm text-gray-500">A carregar…</p>
       ) : inProgress.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhum tema aprovado e enviado. Aprova e envia temas na aba «Fila / Aprovar».</p>
+        <p className="text-sm text-gray-500">Nenhum tema em processamento neste momento. Os enviados aparecem aqui até o callback; depois passam para «Finalizados».</p>
       ) : (
         <ul className="space-y-2">
           {inProgress.map((t) => (

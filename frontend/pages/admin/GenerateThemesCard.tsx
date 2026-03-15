@@ -6,6 +6,7 @@ import {
   listCategories,
   listThemes,
   tavilyCrawl,
+  suggestCategory,
 } from '../../utils/blogApi';
 import type { ThemeSourceUrl } from '../../utils/blogApi';
 import type { BlogCategory } from '../../utils/blogApi';
@@ -23,6 +24,7 @@ const GenerateThemesCard: React.FC<{
   onThemesCreated: () => void;
 }> = ({ configured, onThemesCreated }) => {
   const [sourceUrls, setSourceUrls] = useState<ThemeSourceUrl[]>([]);
+  const [selectedUrlIds, setSelectedUrlIds] = useState<Set<number>>(new Set());
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [quantity, setQuantity] = useState(5);
   const [generating, setGenerating] = useState(false);
@@ -37,6 +39,10 @@ const GenerateThemesCard: React.FC<{
     try {
       const list = await listSourceUrls();
       setSourceUrls(list);
+      setSelectedUrlIds((prev) => {
+        if (prev.size === 0 && list.length > 0) return new Set(list.map((u) => u.id));
+        return new Set([...prev].filter((id) => list.some((u) => u.id === id)));
+      });
     } catch {
       setSourceUrls([]);
     }
@@ -68,6 +74,30 @@ const GenerateThemesCard: React.FC<{
     }
   }, [configured, loadSourceUrls, loadCategories, loadRecentThemes]);
 
+  /** Ao carregar URLs, selecionar todas por padrão. */
+  useEffect(() => {
+    if (sourceUrls.length > 0) {
+      setSelectedUrlIds((prev) => {
+        const allIds = new Set(sourceUrls.map((u) => u.id));
+        if (prev.size === 0) return allIds;
+        return new Set([...prev].filter((id) => allIds.has(id)));
+      });
+    }
+  }, [sourceUrls]);
+
+  const toggleUrlSelection = (id: number) => {
+    setSelectedUrlIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const selectAllUrls = () => setSelectedUrlIds(new Set(sourceUrls.map((u) => u.id)));
+  const selectNoneUrls = () => setSelectedUrlIds(new Set());
+
+  const urlsToUse = sourceUrls.filter((u) => selectedUrlIds.has(u.id));
+
   /** Normaliza título para comparação (evitar duplicados). */
   const normalizeTitle = (t: string | null | undefined): string =>
     (t ?? '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 80);
@@ -95,8 +125,8 @@ const GenerateThemesCard: React.FC<{
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (sourceUrls.length === 0) {
-      setMessage({ type: 'error', text: 'Cadastre pelo menos uma URL em «Cadastrar URLs».' });
+    if (urlsToUse.length === 0) {
+      setMessage({ type: 'error', text: 'Selecione pelo menos uma URL para buscar temas.' });
       return;
     }
     if (categories.length === 0) {
@@ -124,7 +154,7 @@ const GenerateThemesCard: React.FC<{
       // segue sem lista de existentes
     }
 
-    const totalUrls = sourceUrls.length;
+    const totalUrls = urlsToUse.length;
     let created = 0;
     let urlRoundIndex = 0;
     const maxRounds = Math.ceil(n / Math.max(1, totalUrls)) + 2;
@@ -132,7 +162,7 @@ const GenerateThemesCard: React.FC<{
 
     while (created < n && urlRoundIndex < maxUrlAttempts) {
       const urlIdx = urlRoundIndex % totalUrls;
-      const urlObj = sourceUrls[urlIdx];
+      const urlObj = urlsToUse[urlIdx];
       const position = urlIdx + 1;
       setProgress(`URL ${position}/${totalUrls}: ${urlObj.label || urlObj.url} — ${created} tema(s) gerado(s)`);
       urlRoundIndex++;
@@ -147,15 +177,26 @@ const GenerateThemesCard: React.FC<{
           const pageUrl = result.url || data.url;
           const displayText = getDisplayText(result);
           if (!displayText || displayText.trim().length < 50) continue;
-          const matchedNames = matchCategoriesInText(displayText, categories);
-          if (matchedNames.length === 0) continue;
+          let matchedNames = matchCategoriesInText(displayText, categories);
+          let blogCategoryIds: number[];
+          const extractedTitle = extractTitleFromContent(displayText, pageUrl);
+          if (matchedNames.length > 0) {
+            blogCategoryIds = matchedNames
+              .map((name) => categories.find((c) => c.name === name)?.id)
+              .filter((id): id is number => id != null);
+          } else {
+            /** doc §2.1: categoria mais próxima — não exige match exato */
+            const suggested = await suggestCategory({
+              title: extractedTitle || undefined,
+              text: extractedTitle ? undefined : displayText.slice(0, 500),
+            });
+            if (!suggested) continue;
+            blogCategoryIds = [suggested.id];
+            matchedNames = [suggested.name];
+          }
           const signature = topicsSignature(matchedNames);
           if (signature && usedTopicSignatures.has(signature)) continue;
-          const blogCategoryIds = matchedNames
-            .map((name) => categories.find((c) => c.name === name)?.id)
-            .filter((id): id is number => id != null);
           const content = contentFromScrapeResult(result);
-          const extractedTitle = extractTitleFromContent(displayText, pageUrl);
           const fallbackTitle = generateTitleFromTopics(matchedNames);
           const titleToSave = extractedTitle || fallbackTitle || null;
           const normNew = normalizeTitle(titleToSave);
@@ -210,7 +251,7 @@ const GenerateThemesCard: React.FC<{
         <h4 className="text-sm font-black text-green-950 uppercase tracking-widest">Gerar temas (varredura de URLs)</h4>
       </div>
       <p className="text-xs text-gray-500">
-        Fila por URL: o sistema verifica <strong>uma URL de cada vez</strong>, na ordem da lista. Para cada URL gera no máximo 1 tema; depois passa à próxima. Com 5 URLs e quantidade 5, processa as 5 em sequência (1 tema por URL).
+        1º Cadastre URLs em «Cadastrar URLs» → 2º Selecione quais URLs usar abaixo → 3º Defina a quantidade e clique em Gerar. A busca será feita <strong>apenas nas URLs selecionadas</strong>.
       </p>
       {sourceUrls.length === 0 ? (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100">
@@ -219,12 +260,36 @@ const GenerateThemesCard: React.FC<{
         </div>
       ) : (
         <>
-          <ul className="text-xs text-gray-500 list-disc list-inside">
-            {sourceUrls.slice(0, 10).map((u) => (
-              <li key={u.id}>{u.label || u.url}</li>
-            ))}
-            {sourceUrls.length > 10 && <li>… e mais {sourceUrls.length - 10}</li>}
-          </ul>
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar URLs para a busca (marcadas serão varridas)</p>
+            <div className="flex flex-wrap gap-2 mb-2">
+              <button type="button" onClick={selectAllUrls} className="text-xs font-bold text-gold hover:text-green-950">Selecionar todas</button>
+              <button type="button" onClick={selectNoneUrls} className="text-xs font-bold text-gray-500 hover:text-green-950">Desmarcar todas</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sourceUrls.map((u) => (
+                <label
+                  key={u.id}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium cursor-pointer transition-colors ${
+                    selectedUrlIds.has(u.id)
+                      ? 'border-green-950 bg-green-950/10 text-green-950'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedUrlIds.has(u.id)}
+                    onChange={() => toggleUrlSelection(u.id)}
+                    className="rounded border-gray-300 text-gold focus:ring-gold"
+                  />
+                  {u.label || u.url}
+                </label>
+              ))}
+            </div>
+            {urlsToUse.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">{urlsToUse.length} URL(s) selecionada(s) — a busca usará apenas estas.</p>
+            )}
+          </div>
           <form onSubmit={handleGenerate} className="flex flex-wrap items-end gap-4">
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantidade de temas</label>

@@ -118,6 +118,29 @@ export async function pluckCategories(): Promise<{ id: number; name: string }[]>
   return Array.isArray(plucks) ? plucks : [];
 }
 
+/** Categoria mais próxima para um título/texto (doc §2.1). Não exige match exato. */
+export type SuggestCategoryResult = { id: number; name: string; slug?: string; score?: number } | null;
+
+export async function suggestCategory(params: { title?: string; text?: string }): Promise<SuggestCategoryResult> {
+  const { title, text } = params;
+  const query = title?.trim() || text?.trim();
+  if (!query) return null;
+  const url = new URL(`${apiBaseUrl}/api/blog-categories/suggest`);
+  url.searchParams.set(title ? 'title' : 'text', query.slice(0, 500));
+  const res = await fetch(url.toString(), { headers: auth() });
+  const raw = await res.json().catch(() => ({}));
+  if (!res.ok) return null;
+  const data = (raw?.data ?? raw) as Record<string, unknown>;
+  const suggested = data?.suggested_category as { id?: number; name?: string; slug?: string; score?: number } | undefined;
+  if (!suggested || typeof suggested.id !== 'number') return null;
+  return {
+    id: suggested.id,
+    name: typeof suggested.name === 'string' ? suggested.name : '',
+    slug: typeof suggested.slug === 'string' ? suggested.slug : undefined,
+    score: typeof suggested.score === 'number' ? suggested.score : undefined,
+  };
+}
+
 export async function createCategory(body: { name: string; slug?: string; order?: number }): Promise<BlogCategory> {
   const res = await fetch(`${apiBaseUrl}/api/blog-categories/create`, {
     method: 'POST',
@@ -262,9 +285,45 @@ export async function uploadBlogImage(file: File): Promise<{ url: string }> {
   return { url };
 }
 
+/** Quota mensal de posts (doc §2.3) */
+export type PostsQuota = {
+  posts_used_this_month: number;
+  posts_monthly_limit: number;
+  posts_remaining: number;
+  resets_at: string; // ex.: "2026-04-01"
+};
+
+export async function getPostsQuota(): Promise<PostsQuota> {
+  const res = await fetch(`${apiBaseUrl}/api/blog/posts-quota`, { headers: getAuthHeaders() });
+  const raw = await res.json().catch(() => ({}));
+  const data = (raw?.data ?? raw) as Record<string, unknown> | undefined;
+  if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao carregar quota.');
+  const used = Number(data?.posts_used_this_month ?? 0);
+  const limit = Number(data?.posts_monthly_limit ?? 20);
+  const remaining = Number(data?.posts_remaining ?? Math.max(0, limit - used));
+  return {
+    posts_used_this_month: used,
+    posts_monthly_limit: limit,
+    posts_remaining: remaining,
+    resets_at: typeof data?.resets_at === 'string' ? data.resets_at : '',
+  };
+}
+
+/** Erro com status HTTP e dados da resposta (409, 422, 403, etc.) */
+export class TriggerWebhookError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly data?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = 'TriggerWebhookError';
+  }
+}
+
 /**
  * Dispara o webhook n8n de criação de post (automação).
- * Opcional: theme_id (um tema) ou theme_ids (vários) para enviar temas guardados.
+ * Só aceita UM tema por vez. 409 = já há tema em processamento; 403 = limite mensal; 422 = já disparado ou mais de um id.
  * Requer auth e permissão manage-blog.
  */
 export async function triggerCreatePostWebhook(themeIdOrIds?: number | number[]): Promise<{ success: boolean; body?: string | null }> {
@@ -279,16 +338,14 @@ export async function triggerCreatePostWebhook(themeIdOrIds?: number | number[])
     headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const raw = await res.json().catch(() => ({}));
+  const raw = await res.json().catch(() => ({})) as Record<string, unknown>;
   const data = (raw?.data ?? raw) as Record<string, unknown> | undefined;
   if (!res.ok) {
-    const msg = (raw as { message?: string })?.message ?? 'Erro ao disparar webhook.';
+    const msg = (raw?.message ?? data?.errors) as string | undefined;
     const errText = typeof msg === 'string' ? msg : 'Erro ao disparar webhook.';
-    const body = (data?.body ?? (raw as { data?: { body?: string } })?.data?.body) as string | undefined;
-    if (body && body.trim()) {
-      throw new Error(`${errText}\n\nResposta do webhook:\n${body.trim()}`);
-    }
-    throw new Error(errText);
+    const bodyText = (data?.body ?? (raw?.data as { body?: string })?.body) as string | undefined;
+    const fullMsg = bodyText && String(bodyText).trim() ? `${errText}\n\nResposta do webhook:\n${bodyText.trim()}` : errText;
+    throw new TriggerWebhookError(fullMsg, res.status, data as Record<string, unknown>);
   }
   const success = data?.success === true;
   return { success, body: (data?.body as string | null) ?? null };
@@ -314,14 +371,30 @@ export type BlogTheme = {
   dispatch_completed_at?: string | null;
   approved_at?: string | null;
   approved?: boolean;
+  /** Callback n8n devolve no dispatch_payload; usado em Finalizados para abrir post */
+  blog_post_id?: number | null;
+  blog_post_title?: string | null;
+  blog_post_slug?: string | null;
+  blog_post_status?: string | null;
 };
 
-export async function listThemes(): Promise<BlogTheme[]> {
-  const res = await fetch(`${apiBaseUrl}/api/blog/themes`, { headers: getAuthHeaders() });
+export type ThemeScope = 'queue' | 'in_progress' | 'finalizados' | 'falhas' | 'dispatch_done';
+
+/** Lista temas. Use scope para filtrar no backend (queue, in_progress, finalizados, falhas). */
+export async function listThemes(scope?: ThemeScope): Promise<BlogTheme[]> {
+  const url = new URL(`${apiBaseUrl}/api/blog/themes`);
+  if (scope) url.searchParams.set('scope', scope);
+  url.searchParams.set('per_page', '200'); // evita paginação truncar lista (Fila precisa ver todos)
+  const res = await fetch(url.toString(), { headers: getAuthHeaders() });
   const raw = await res.json().catch(() => ({}));
-  const data = (raw?.data ?? raw) as { blog_themes?: BlogTheme[] } | undefined;
+  const data = (raw?.data ?? raw) as Record<string, unknown> | undefined;
   if (!res.ok) throw new Error((raw as { message?: string })?.message ?? 'Erro ao carregar temas.');
-  return Array.isArray(data?.blog_themes) ? data.blog_themes : [];
+  const arr = data?.blog_themes;
+  if (Array.isArray(arr)) return arr as BlogTheme[];
+  // Laravel paginator: blog_themes.data ou data direto
+  const paginated = arr as { data?: BlogTheme[] } | undefined;
+  if (Array.isArray(paginated?.data)) return paginated.data;
+  return [];
 }
 
 export async function createTheme(payload: { url: string; title?: string | null; blog_category_id?: number | null; blog_category_ids?: number[] | null; content?: string | null; topics?: string[] }): Promise<BlogTheme> {

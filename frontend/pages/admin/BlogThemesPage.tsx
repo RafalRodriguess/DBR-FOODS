@@ -1,23 +1,40 @@
-import React, { useState, useCallback } from 'react';
-import { Link2, Zap, ListChecks, Loader2 } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Link2, Zap, ListChecks, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import SourceUrlsCard from './SourceUrlsCard';
 import GenerateThemesCard from './GenerateThemesCard';
 import FilaAprovarCard from './FilaAprovarCard';
 import InProgressCard from './InProgressCard';
-import { getTavilyConfig } from '../../utils/blogApi';
+import FinalizadosCard from './FinalizadosCard';
+import FalhasCard from './FalhasCard';
+import { getTavilyConfig, listThemes } from '../../utils/blogApi';
+import { PostCreatedToastProvider, usePostCreatedToast } from '../../components/PostCreatedToast';
 
-type TabKey = 'urls' | 'gerar' | 'fila' | 'progresso';
+type TabKey = 'urls' | 'gerar' | 'fila' | 'progresso' | 'finalizados' | 'falhas';
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'urls', label: 'Cadastrar URLs', icon: <Link2 size={16} /> },
   { key: 'gerar', label: 'Gerar temas', icon: <Zap size={16} /> },
   { key: 'fila', label: 'Fila / Aprovar', icon: <ListChecks size={16} /> },
   { key: 'progresso', label: 'Em progresso', icon: <Loader2 size={16} /> },
+  { key: 'finalizados', label: 'Finalizados', icon: <CheckCircle2 size={16} /> },
+  { key: 'falhas', label: 'Falhas', icon: <XCircle size={16} /> },
 ];
 
-const BlogThemesPage: React.FC = () => {
+function isRecentlyCompleted(completedAt: string | null | undefined, withinSeconds = 120): boolean {
+  if (!completedAt || String(completedAt).trim() === '') return false;
+  const d = new Date(completedAt);
+  if (Number.isNaN(d.getTime())) return false;
+  return (Date.now() - d.getTime()) / 1000 <= withinSeconds;
+}
+
+const BlogThemesPageInner: React.FC = () => {
+  const { showPostCreatedSuccess } = usePostCreatedToast();
   const [tab, setTab] = useState<TabKey>('urls');
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [refreshProgressKey, setRefreshProgressKey] = useState(0);
+  const [refreshFilaKey, setRefreshFilaKey] = useState(0);
+  const [refreshFinalizadosKey, setRefreshFinalizadosKey] = useState(0);
+  const prevInProgressCount = useRef<number>(-1);
 
   React.useEffect(() => {
     getTavilyConfig()
@@ -25,12 +42,48 @@ const BlogThemesPage: React.FC = () => {
       .catch(() => setConfigured(false));
   }, []);
 
+  /** Deteta quando n8n conclui (in_progress vai para 0) e confirma sucesso em finalizados para mostrar toast. */
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const inProgress = await listThemes('in_progress');
+        const count = inProgress.length;
+        const hadItems = prevInProgressCount.current > 0;
+        prevInProgressCount.current = count;
+        if (hadItems && count === 0) {
+          const finalizados = await listThemes('finalizados');
+          const latest = finalizados[0];
+          if (latest?.dispatch_status === 'completed' && isRecentlyCompleted(latest.dispatch_completed_at)) {
+            if (!cancelled) {
+              showPostCreatedSuccess();
+              setRefreshFinalizadosKey((k) => k + 1); // força refresh da aba Finalizados (doc §2.4)
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    const id = setInterval(check, 12000); // 12 s, alinhado com polling Em progresso (doc §2)
+    check();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [showPostCreatedSuccess]);
+
   const handleThemesCreated = useCallback(() => {
     setTab('fila');
+    setRefreshFilaKey((k) => k + 1); // força refresh da Fila para mostrar os novos temas
   }, []);
 
   const handleSentToProgress = useCallback(() => {
     setTab('progresso');
+  }, []);
+
+  const handleSendComplete = useCallback(() => {
+    setRefreshProgressKey((k) => k + 1);
   }, []);
 
   return (
@@ -60,11 +113,19 @@ const BlogThemesPage: React.FC = () => {
       <div className="p-6 md:p-8 space-y-6">
         {tab === 'urls' && <SourceUrlsCard />}
         {tab === 'gerar' && configured !== null && <GenerateThemesCard configured={configured} onThemesCreated={handleThemesCreated} />}
-        {tab === 'fila' && <FilaAprovarCard onThemesChange={() => {}} onSentToProgress={handleSentToProgress} />}
-        {tab === 'progresso' && <InProgressCard />}
+        {tab === 'fila' && <FilaAprovarCard refreshTrigger={refreshFilaKey} onThemesChange={() => {}} onSentToProgress={handleSentToProgress} onSendComplete={handleSendComplete} />}
+        {tab === 'progresso' && <InProgressCard refreshTrigger={refreshProgressKey} />}
+        {tab === 'finalizados' && <FinalizadosCard refreshTrigger={refreshFinalizadosKey} />}
+        {tab === 'falhas' && <FalhasCard />}
       </div>
     </section>
   );
 };
+
+const BlogThemesPage: React.FC = () => (
+  <PostCreatedToastProvider>
+    <BlogThemesPageInner />
+  </PostCreatedToastProvider>
+);
 
 export default BlogThemesPage;

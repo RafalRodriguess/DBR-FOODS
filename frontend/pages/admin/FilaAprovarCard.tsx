@@ -6,21 +6,35 @@ import {
   approveTheme,
   unapproveTheme,
   triggerCreatePostWebhook,
+  getPostsQuota,
+  TriggerWebhookError,
 } from '../../utils/blogApi';
-import type { BlogTheme } from '../../utils/blogApi';
+import type { BlogTheme, PostsQuota } from '../../utils/blogApi';
 
 const FilaAprovarCard: React.FC<{
+  refreshTrigger?: number;
   onThemesChange?: () => void;
   onSentToProgress?: () => void;
-}> = ({ onThemesChange, onSentToProgress }) => {
+  onSendComplete?: () => void;
+}> = ({ refreshTrigger = 0, onThemesChange, onSentToProgress, onSendComplete }) => {
   const [themes, setThemes] = useState<BlogTheme[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadThemes = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await listThemes();
-      setThemes(list);
+      /** Combinação: queue (backend garante dispatched_at=null) + temas não aprovados da lista completa. Evita que finalizados apareçam na Fila. */
+      const [queueList, allList] = await Promise.all([listThemes('queue'), listThemes()]);
+      const queueIds = new Set(queueList.map((t) => t.id));
+      const isDispatchedTheme = (t: BlogTheme) =>
+        t.dispatched === true ||
+        (t.dispatched_at != null && String(t.dispatched_at).trim() !== '') ||
+        t.dispatch_status === 'completed' ||
+        t.dispatch_status === 'failed' ||
+        (t.dispatch_completed_at != null && String(t.dispatch_completed_at).trim() !== '') ||
+        (typeof t.blog_post_id === 'number' && t.blog_post_id > 0);
+      const unapproved = allList.filter((t) => !t.approved && !queueIds.has(t.id) && !isDispatchedTheme(t));
+      setThemes([...queueList, ...unapproved]);
     } catch {
       setThemes([]);
     } finally {
@@ -30,7 +44,7 @@ const FilaAprovarCard: React.FC<{
 
   useEffect(() => {
     loadThemes();
-  }, [loadThemes]);
+  }, [loadThemes, refreshTrigger]);
 
   const refresh = useCallback(() => {
     loadThemes();
@@ -43,10 +57,60 @@ const FilaAprovarCard: React.FC<{
   const [deletingThemeId, setDeletingThemeId] = useState<number | null>(null);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [hasThemeInProgress, setHasThemeInProgress] = useState(false);
+  const [themeInProgressId, setThemeInProgressId] = useState<number | null>(null);
+  const [quota, setQuota] = useState<PostsQuota | null>(null);
 
-  const queueThemes = themes.filter((t) => !t.dispatched && !justSentIds.has(t.id));
+  const loadQuota = useCallback(async () => {
+    try {
+      const q = await getPostsQuota();
+      setQuota(q);
+    } catch {
+      setQuota(null);
+    }
+  }, []);
+
+  const loadInProgress = useCallback(async () => {
+    try {
+      const list = await listThemes('in_progress');
+      setHasThemeInProgress(list.length > 0);
+      setThemeInProgressId(list[0]?.id ?? null);
+    } catch {
+      setHasThemeInProgress(false);
+      setThemeInProgressId(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInProgress();
+  }, [loadInProgress, refreshTrigger]);
+
+  useEffect(() => {
+    loadQuota();
+  }, [loadQuota, refreshTrigger]);
+
+  /** Polling a cada 8s enquanto houver tema em progresso; quando o n8n finalizar, desbloqueia o envio. */
+  useEffect(() => {
+    if (!hasThemeInProgress) return;
+    const id = setInterval(loadInProgress, 8000);
+    return () => clearInterval(id);
+  }, [hasThemeInProgress, loadInProgress]);
+
+  /** Exclui temas já enviados/finalizados: não devem aparecer na Fila. Alinhado com scope=finalizados (dispatch_status=completed) e falhas. */
+  const isDispatched = (t: BlogTheme): boolean => {
+    if (t.dispatched === true) return true;
+    const hasDispatchedAt = t.dispatched_at != null && String(t.dispatched_at).trim() !== '';
+    if (hasDispatchedAt) return true;
+    if (t.dispatch_status === 'completed' || t.dispatch_status === 'failed') return true;
+    const hasCompletedAt = t.dispatch_completed_at != null && String(t.dispatch_completed_at).trim() !== '';
+    if (hasCompletedAt) return true;
+    if (typeof t.blog_post_id === 'number' && t.blog_post_id > 0) return true;
+    return false;
+  };
+  const queueThemes = themes.filter((t) => !isDispatched(t) && !justSentIds.has(t.id));
   const approvedThemes = queueThemes.filter((t) => t.approved);
-  const canSelect = (t: BlogTheme) => !t.dispatched && t.approved;
+  const canSelect = (t: BlogTheme) => !isDispatched(t) && t.approved;
+  const noQuotaRemaining = quota != null && quota.posts_remaining <= 0;
   const formatCreatedAt = (value?: string | null): string => {
     if (!value) return 'Data não disponível';
     const d = new Date(value);
@@ -106,6 +170,7 @@ const FilaAprovarCard: React.FC<{
     setSendingThemeId(themeId);
     setJustSentIds((prev) => new Set(prev).add(themeId));
     setMessage(null);
+    onSentToProgress?.(); // vai para Em progresso imediatamente para aguardar a resposta
     try {
       await triggerCreatePostWebhook(themeId);
       setMessage({ type: 'success', text: 'Tema enviado. Aparece em «Em progresso».' });
@@ -115,14 +180,29 @@ const FilaAprovarCard: React.FC<{
         return next;
       });
       refresh();
-      onSentToProgress?.();
+      loadInProgress(); // mantém bloqueio (há 1 em progresso)
+      loadQuota(); // atualiza quota após envio
+      onSendComplete?.();
       setJustSentIds((prev) => {
         const next = new Set(prev);
         next.delete(themeId);
         return next;
       });
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erro ao enviar.' });
+      const msg = err instanceof Error ? err.message : 'Erro ao enviar.';
+      setMessage({ type: 'error', text: msg });
+      if (err instanceof TriggerWebhookError) {
+        if (err.status === 409) {
+          setHasThemeInProgress(true);
+          const tid = err.data?.theme_id_in_progress;
+          setThemeInProgressId(typeof tid === 'number' ? tid : null);
+        }
+        if (err.status === 403 && err.data) {
+          const used = Number(err.data.posts_used_this_month ?? 0);
+          const limit = Number(err.data.posts_monthly_limit ?? 20);
+          setQuota({ posts_used_this_month: used, posts_monthly_limit: limit, posts_remaining: 0, resets_at: String(err.data.resets_at ?? '') });
+        }
+      }
       setJustSentIds((prev) => {
         const next = new Set(prev);
         next.delete(themeId);
@@ -139,22 +219,43 @@ const FilaAprovarCard: React.FC<{
       setMessage({ type: 'error', text: 'Selecione pelo menos um tema aprovado para enviar.' });
       return;
     }
+    if (ids.length > 1) {
+      setMessage({ type: 'error', text: 'Só pode enviar um tema por vez. Selecione apenas um.' });
+      return;
+    }
+    const themeId = ids[0];
     setSendingSelected(true);
-    setJustSentIds((prev) => new Set([...prev, ...ids]));
+    setJustSentIds((prev) => new Set([...prev, themeId]));
     setMessage(null);
+    onSentToProgress?.();
     try {
-      await triggerCreatePostWebhook(ids);
+      await triggerCreatePostWebhook(themeId);
       setMessage({ type: 'success', text: `${ids.length} tema(s) enviado(s). Aparecem em «Em progresso».` });
       setSelectedIds(new Set());
       refresh();
-      onSentToProgress?.();
+      loadInProgress(); // mantém bloqueio (há 1 em progresso)
+      loadQuota(); // atualiza quota após envio
+      onSendComplete?.();
       setJustSentIds((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
         return next;
       });
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erro ao enviar.' });
+      const msg = err instanceof Error ? err.message : 'Erro ao enviar.';
+      setMessage({ type: 'error', text: msg });
+      if (err instanceof TriggerWebhookError) {
+        if (err.status === 409) {
+          setHasThemeInProgress(true);
+          const tid = err.data?.theme_id_in_progress;
+          setThemeInProgressId(typeof tid === 'number' ? tid : null);
+        }
+        if (err.status === 403 && err.data) {
+          const used = Number(err.data.posts_used_this_month ?? 0);
+          const limit = Number(err.data.posts_monthly_limit ?? 20);
+          setQuota({ posts_used_this_month: used, posts_monthly_limit: limit, posts_remaining: 0, resets_at: String(err.data.resets_at ?? '') });
+        }
+      }
       setJustSentIds((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
@@ -193,6 +294,16 @@ const FilaAprovarCard: React.FC<{
       <p className="text-xs text-gray-500">
         Temas na fila (ainda não enviados). Aprove os que deseja enviar; depois selecione a quantidade e use «Enviar selecionados». Assim há rotatividade e controlo antes do envio.
       </p>
+      {hasThemeInProgress && (
+        <p className="text-xs text-amber-700 font-medium">
+          Há um tema em processamento {themeInProgressId != null ? `(tema #${themeInProgressId})` : ''}. Aguarde finalizar para enviar outro.
+        </p>
+      )}
+      {quota != null && (
+        <p className={`text-xs font-medium ${noQuotaRemaining ? 'text-amber-700' : 'text-gray-600'}`}>
+          {quota.posts_used_this_month}/{quota.posts_monthly_limit} posts este mês. Limite renova no dia 1.
+        </p>
+      )}
       {message && (
         <p className={`text-[10px] font-bold uppercase ${message.type === 'success' ? 'text-green-600' : 'text-red-600'} ${message.type === 'error' ? 'whitespace-pre-line' : ''}`}>
           {message.text}
@@ -208,7 +319,7 @@ const FilaAprovarCard: React.FC<{
             <button
               type="button"
               onClick={handleSendSelected}
-              disabled={sendingSelected || selectedIds.size === 0}
+              disabled={sendingSelected || selectedIds.size === 0 || hasThemeInProgress || noQuotaRemaining}
               className="inline-flex items-center gap-1.5 bg-gold hover:bg-green-950 disabled:opacity-60 text-white px-4 py-2 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all"
             >
               <Play size={14} />
@@ -296,7 +407,7 @@ const FilaAprovarCard: React.FC<{
                       <button
                         type="button"
                         onClick={() => handleSendOne(t.id)}
-                        disabled={sendingThemeId !== null}
+                        disabled={sendingThemeId !== null || hasThemeInProgress || noQuotaRemaining}
                         className="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-green-950 px-3 py-1.5 rounded-lg font-bold text-[10px] tracking-widest uppercase transition-all disabled:opacity-50"
                       >
                         <Play size={12} /> Enviar este
